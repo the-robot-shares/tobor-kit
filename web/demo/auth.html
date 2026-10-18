@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>noizu-auth — console layout</title>
+    <style>
+      body { margin: 0; font-family: system-ui, sans-serif; background: #f5f6f8; color: #20232c; }
+      header { padding: 1.5rem 1rem 0; max-width: 62rem; margin: 0 auto; }
+      .grid { display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr)); max-width: 62rem; margin: 0 auto; padding: 1rem; }
+      .pane { padding: 1.5rem; border-radius: 1rem; background: #fff; border: 1px solid #dddfe5; }
+      .pane h2 { margin: 0 0 1rem; font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: #606575; }
+      noizu-auth::part(shell) { min-height: 0; padding: 0; background: transparent; }
+      /* OLED dark token set — the same layout, themed only through --auth-* properties. */
+      .dark { background: #0b0c0f; border-color: #23262e; color: #e8eaf0; }
+      .dark h2 { color: #8a8f9c; }
+      .dark noizu-auth {
+        --auth-color: #e8eaf0; --auth-background: #121419; --auth-border: #262a33;
+        --auth-muted: #9aa0ad; --auth-input-background: #1a1d24;
+        --auth-button-background: #171a21; --auth-accent: #4f7cff; --auth-on-accent: #fff;
+        --auth-page-background: transparent; --auth-shadow: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>noizu-auth — console layout</h1>
+      <p>The default arrangement: social row, <code>or</code> rule, email | mobile segment, filled fields, primary button, code links, footer. Same markup in light and dark; only <code>--auth-*</code> tokens differ. Pass <code>layout="tabs"</code> for the previous flat pipe row.</p>
+    </header>
+    <div class="grid">
+      <div class="pane"><h2>login · light</h2><noizu-auth id="login-light" transport="rest" api-base="/demo-api"></noizu-auth></div>
+      <div class="pane dark"><h2>login · dark</h2><noizu-auth id="login-dark" transport="rest" api-base="/demo-api"></noizu-auth></div>
+      <div class="pane"><h2>signup · light</h2><noizu-auth id="signup-light" flow="signup" transport="rest" api-base="/demo-api"></noizu-auth></div>
+      <div class="pane dark"><h2>signup · dark</h2><noizu-auth id="signup-dark" flow="signup" transport="rest" api-base="/demo-api"></noizu-auth></div>
+    </div>
+    <script type="module">
+      // Demo-only stub: there is no backend behind this page, so answer the element's own
+      // /auth/config request instead of letting it 404. Nothing here is component code.
+      // `oidc` rather than `authentik` on purpose — that is what the portfolio backends
+      // publish, and the pipe resolves either id.
+      const realFetch = window.fetch.bind(window);
+      const providers = [
+        {id: 'google', href: '/auth/google'},
+        {id: 'oidc', href: '/auth/oidc'},
+        {id: 'github', href: '/auth/github'},
+      ];
+      window.fetch = (input, init) => {
+        const url = String(typeof input === 'string' ? input : input.url);
+        if (url.includes('/demo-api/auth/config')) {
+          return Promise.resolve(new Response(JSON.stringify({providers}), {status: 200, headers: {'content-type': 'application/json'}}));
+        }
+        return realFetch(input, init);
+      };
+      import '../src/components/auth/noizu-auth.ts';
+      const pipes = ['email_password', 'mobile_password', 'email_otp', 'mobile_otp', 'google', 'authentik', 'github'];
+      for (const el of document.querySelectorAll('noizu-auth')) el.pipes = pipes;
+    </script>
+  </body>
+</html>

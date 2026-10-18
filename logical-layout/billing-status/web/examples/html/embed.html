@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>noizu-billing-status</title>
+    <!-- CDN latest rewrites Lit to vendor/ — no import map required. -->
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/billing-status/noizu-billing-status.js"></script>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Billing</h1>
+    <!-- subscription is a JS property, not an HTML attribute. -->
+    <noizu-billing-status></noizu-billing-status>
+    <script type="module">
+      const el = document.querySelector('noizu-billing-status');
+      // Host-owned snapshot. Never a Stripe secret or customer id on the element.
+      el.subscription = {
+        status: 'active',
+        planName: 'Pro',
+        renewsAt: '2026-10-01',
+      };
+      el.addEventListener('portal-open', () => {
+        // Host-owned: POST /billing/portal then redirect. The island does not call Stripe.
+        fetch('/billing/portal', {method: 'POST', credentials: 'same-origin'})
+          .then((res) => res.json())
+          .then((body) => {
+            if (body.url) location.assign(body.url);
+          })
+          .catch(() => {});
+      });
+    </script>
+  </body>
+</html>

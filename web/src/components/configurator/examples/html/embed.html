@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tobor-configurator</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "lit": "https://cdn.derobot.is/tobor-kit/latest/vendor/lit.js",
+          "lit/decorators.js": "https://cdn.derobot.is/tobor-kit/latest/vendor/lit-decorators.js"
+        }
+      }
+    </script>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 2rem;
+        background: #12131a;
+        color: #e8e9f0;
+      }
+    </style>
+  </head>
+  <body>
+    <tobor-configurator id="cfg">
+      <script type="application/json">
+        {
+          "tag": "demo-widget",
+          "group": "display",
+          "importPath": "demo-widget.js",
+          "demoHtml": "<demo-widget label=\"Hello\" tone=\"info\"></demo-widget>",
+          "backend": "none",
+          "fields": [
+            {"attr": "label", "type": "string", "required": true, "default": "Hello", "placeholder": "Title"},
+            {"attr": "note", "type": "text", "placeholder": "Longer copy"},
+            {"attr": "count", "type": "number", "default": 1},
+            {"attr": "enabled", "type": "boolean", "default": false},
+            {"attr": "tone", "type": "select", "options": ["info", "warn", "danger"], "default": "info"},
+            {"attr": "flags", "type": "multiselect", "options": ["alpha", "beta"], "default": ["alpha"]},
+            {"attr": "accent", "type": "color", "default": "#6ee7c7"},
+            {"attr": "docs", "type": "url", "placeholder": "https://example.com"},
+            {"attr": "tags", "type": "tag-list", "default": ["demo"]},
+            {"attr": "meta", "type": "json", "propertyOnly": true, "default": {"k": 1}},
+            {"attr": "id", "type": "string", "uneditable": true, "default": "demo-1"}
+          ],
+          "slots": ["default"]
+        }
+      </script>
+    </tobor-configurator>
+    <pre id="log"></pre>
+    <script type="module">
+      import 'https://cdn.derobot.is/tobor-kit/latest/components/configurator/tobor-configurator.js';
+
+      const el = document.querySelector('#cfg');
+      const log = document.querySelector('#log');
+      const write = (name, detail) => {
+        log.textContent = name + ' ' + JSON.stringify(detail);
+      };
+      el.addEventListener('configurator-change', (event) => {
+        write('configurator-change', event.detail);
+      });
+      el.addEventListener('configurator-apply', (event) => {
+        // Host-owned: insert event.detail into the page. The island does not.
+        write('configurator-apply', event.detail);
+      });
+    </script>
+  </body>
+</html>

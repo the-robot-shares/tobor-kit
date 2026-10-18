@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tobor-mcp-domain</title>
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/mcp-domain/tobor-mcp-domain.js"></script>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 48rem; margin: 2rem auto; padding: 0 1rem; background: #12131a; color: #e8e9f0; }
+    </style>
+  </head>
+  <body>
+    <div class="demo-frame">
+      <tobor-mcp-domain></tobor-mcp-domain>
+    </div>
+    <pre id="log"></pre>
+    <script type="module">
+      const el = document.querySelector('tobor-mcp-domain');
+      const log = document.querySelector('#log');
+      // Host-owned: tools is a JS property, not an HTML attribute.
+      el.tools = [
+        {name: 'Github.PullCreate', visibility: 'visible'},
+        {name: 'Github.IssueList', visibility: 'discoverable'},
+        {name: 'Filesystem.Write', visibility: 'disabled'},
+      ];
+      el.addEventListener('tool-visibility-change', (event) => {
+        log.textContent = JSON.stringify(event.detail);
+      });
+    </script>
+  </body>
+</html>

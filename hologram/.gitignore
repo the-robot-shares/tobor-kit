@@ -1,0 +1,12 @@
+# Elixir
+/_build/
+/deps/
+
+# Hologram compiler output (regenerated; the committed stylesheet artifact
+# is /priv/static/tobor-kit.css, not the bundles)
+/priv/static/hologram/
+# symlink form (worktrees symlink deps/_build to the canonical checkout; a
+# trailing-slash pattern misses the symlink itself, which once produced a
+# broken self-referencing symlink committed at the repo root)
+deps
+_build

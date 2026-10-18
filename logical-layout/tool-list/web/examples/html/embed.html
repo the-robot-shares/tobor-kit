@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>tobor-tool-list</title>
+    <!-- CDN build rewrites Lit to vendor/; no import map required. -->
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/tool-list/tool-list.js"></script>
+  </head>
+  <body>
+    <div class="demo-frame">
+      <tobor-tool-list></tobor-tool-list>
+    </div>
+    <script type="module">
+      const el = document.querySelector('tobor-tool-list');
+      // Host-owned: if guide.auth.required, add Authorization from your session — never hard-code it.
+      const res = await fetch('/api/tobor-kit/mcp/tools');
+      if (!res.ok) throw new Error(`GET /mcp/tools ${res.status}`);
+      el.inventory = await res.json();
+      el.addEventListener('tobor-tool-select', (e) => {
+        // Advisory: host may send e.detail.tool.name as task_id on POST /sessions/{id}/turn.
+        console.info('tobor-tool-select', e.detail.tool);
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,29 @@
+# tobor-kit-go runtime policy example.
+#
+# The frozen bundle and guide-definition carry the contract content; this file
+# carries deployment knobs only. Flags with TOBOR_* env equivalents resolve at
+# boot.
+
+server:
+  addr: ":8080"              # TOBOR_ADDR
+  # Base path is fixed by the OpenAPI contract: /api/tobor-kit
+
+guide:
+  # Compiled by tobor-kit-compile; hash is verified at boot (tamper = refuse to start).
+  guide_path: schema/examples/deploy-guide.guide.yaml
+  bundle_path: compiler/test/tobor_kit/golden/deploy-guide.bundle.json
+
+telemetry:
+  # OTLP endpoint; empty disables span export (server keeps consent semantics).
+  otlp_endpoint: ""          # TOBOR_OTEL_ENDPOINT / OTEL_EXPORTER_OTLP_ENDPOINT
+
+mcp:
+  # Cache window for discovered tool inventories; ?refresh=true bypasses.
+  cache_ttl: 1m
+
+voice:
+  token_ttl: 5m              # minted credentials are always short-lived
+
+sessions:
+  # Completed turns retained per session for idempotency-key replay (0 = unbounded).
+  replay_retain: 100

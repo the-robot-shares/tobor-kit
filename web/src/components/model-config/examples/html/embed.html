@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>noizu-model-config</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "lit": "https://cdn.derobot.is/tobor-kit/latest/vendor/lit.js",
+          "lit/decorators.js": "https://cdn.derobot.is/tobor-kit/latest/vendor/lit-decorators.js"
+        }
+      }
+    </script>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 2rem;
+        background: #12131a;
+        color: #e8e9f0;
+      }
+    </style>
+  </head>
+  <body>
+    <noizu-model-config
+      id="model"
+      value="openai:gpt-4o"
+      inherit
+      allow-custom
+      allow-budget
+      budget="1000"
+    ></noizu-model-config>
+    <pre id="log"></pre>
+    <script type="module">
+      import 'https://cdn.derobot.is/tobor-kit/latest/components/model-config/noizu-model-config.js';
+
+      const el = document.querySelector('#model');
+      const log = document.querySelector('#log');
+      // Host-owned: catalog is a JS property, not an HTML attribute.
+      el.catalog = [
+        {provider: 'openai', model: 'gpt-4o', label: 'GPT-4o'},
+        {provider: 'anthropic', model: 'claude-3-5', label: 'Claude 3.5'},
+      ];
+      el.addEventListener('model-change', (event) => {
+        log.textContent = JSON.stringify({model: event.detail.value});
+      });
+      el.addEventListener('budget-change', (event) => {
+        log.textContent = JSON.stringify({budget: event.detail.amount});
+      });
+      el.addEventListener('custom-endpoint-save', (event) => {
+        const {baseUrl, model, apiKey} = event.detail;
+        // Empty apiKey = keep stored. Do not log the key.
+        log.textContent = JSON.stringify({baseUrl, model, apiKey: apiKey ? '(set)' : '(keep stored)'});
+      });
+    </script>
+  </body>
+</html>

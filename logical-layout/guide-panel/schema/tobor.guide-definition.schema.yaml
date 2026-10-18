@@ -1,0 +1,735 @@
+# tobor.guide-definition — schema v1
+#
+# A single YAML document that fully describes an embedded agent guide:
+# who it is, what it can do, how its NPL system prompt is compiled, what UI
+# surfaces render, how it authenticates, and what it is allowed to log.
+#
+# This file is SELF-DESCRIBING (the schema is expressed in YAML, with a worked
+# `example:` instance at the bottom) — the same convention as
+# Portfolio/WebApps/_planning/noizu-intellect/project-management/schemas/agent-definition.schema.yaml
+# A machine-checkable JSON Schema projection lives beside it at
+# schema/tobor.guide-definition.schema.json
+#
+# Consumers:
+#   compiler/   -> reads `agent` + `npl` -> emits dist/<slug>.bundle.json
+#   elixir/ go/ -> read `mcp` `auth` `telemetry` `voice` + the frozen bundle
+#   web/ swift/ -> read the API's projection of `ui` `mcp` `auth` `telemetry`
+#
+# BUNDLE vs RUNTIME CONFIG — what ships where:
+#   The compiled bundle (dist/<slug>.bundle.json) carries only the
+#   prompt-facing sections: core, agent, capabilities, dependencies,
+#   orchestration, npl. The ui/auth/telemetry/voice/transcript/mcp blocks are
+#   RUNTIME CONFIG: they are never compiled into the bundle and never reach
+#   the client. The serving backend merges them into the GET /guide
+#   projection (and its own startup wiring); clients see only that
+#   projection.
+
+schema: tobor.guide-definition
+version: 1
+status: draft
+
+# ---------------------------------------------------------------------------
+# Definitions of each top-level block.
+# ---------------------------------------------------------------------------
+
+core:
+  description: >
+    Stable identity columns. These are the fields a datastore would promote to
+    real columns; everything else is document-shaped.
+  fields:
+    slug:
+      type: string
+      required: true
+      pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"
+      description: >
+        Kebab-case, unique within the organization. Doubles as the compiled
+        bundle filename (dist/<slug>.bundle.json) and as the tobor Memory_*
+        persona scope, matching the intellect.agent-definition convention.
+    name:
+      type: string
+      required: true
+      description: Display name shown in the guide panel header.
+    title:
+      type: string
+      required: false
+      description: Short role line, e.g. "Deployment Guide".
+    archetype:
+      type: string
+      required: false
+      description: Freeform archetype label used for tone presets.
+    tags:
+      type: array
+      items: string
+      default: []
+    status:
+      type: enum
+      values: [draft, active, suspended, archived]
+      default: draft
+    organization:
+      type: string
+      required: true
+      description: Organization slug or UUID that owns this guide.
+    project:
+      type: string
+      required: false
+      description: Project slug or UUID. Null means org-level.
+    model:
+      type: string
+      required: false
+      description: >
+        Default model id. Resolved by the backend's provider seam; may be
+        overridden per-deployment by config. Omit to take the backend default.
+
+# ---------------------------------------------------------------------------
+
+agent:
+  description: >
+    Identity and voice. Lifted from intellect.agent-definition `definition`,
+    which already establishes that these fields compile into prompt text rather
+    than being consumed literally at runtime.
+  fields:
+    purpose:
+      type: string
+      required: true
+      description: One to three sentences. Becomes the PURPOSE prompt field.
+    biography:
+      type: string
+      required: true
+      description: Backstory prose. Feeds the IDENTITY prompt field.
+    personality:
+      type: object
+      required: false
+      fields:
+        ocean:
+          type: map
+          keys: [openness, conscientiousness, extraversion, agreeableness, neuroticism]
+          value_type: integer
+          value_range: [0, 100]
+        mbti:
+          type: string
+          pattern: "^[IE][NS][TF][PJ]$"
+        tone:
+          type: string
+          description: Short tone directive, e.g. "dry, concrete, never chirpy".
+    voice_signature:
+      type: object
+      required: false
+      description: >
+        Drives both written voice and TTS. `example_lines` are emitted as
+        few-shot shots in the compiled prompt — do not duplicate them by hand
+        into an examples section.
+      fields:
+        style: {type: string}
+        quirks: {type: array, items: string}
+        lexicon: {type: array, items: string}
+        patterns: {type: array, items: string}
+        example_lines:
+          type: array
+          items: string
+          min_items: 3
+          description: Minimum three; these become the few-shot thread.
+        tts:
+          type: object
+          fields:
+            provider: {type: string}
+            voice_id: {type: string}
+    interests:
+      type: object
+      required: false
+      fields:
+        primary: {type: array, items: string, min_items: 2}
+        secondary: {type: array, items: string, min_items: 2}
+    goals:
+      type: array
+      items: string
+      default: []
+
+# ---------------------------------------------------------------------------
+
+capabilities:
+  description: >
+    What the guide claims it can do, in its own words. Rendered into the prompt
+    AND surfaced in the UI as the "what can you help with" affordance. Shape
+    borrowed from PRD-011 FR-004.
+  type: array
+  item_fields:
+    id: {type: string, required: true, pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"}
+    description: {type: string, required: true}
+    inputs: {type: array, items: string, default: []}
+    outputs: {type: array, items: string, default: []}
+
+dependencies:
+  description: Other guides / tools this one expects to be present.
+  fields:
+    guides: {type: array, items: string, default: []}
+    tools: {type: array, items: string, default: []}
+
+orchestration:
+  fields:
+    max_turns: {type: integer, default: 32}
+    timeout_seconds: {type: integer, default: 120}
+    retry_count: {type: integer, default: 1}
+    max_internal_tool_steps:
+      type: integer
+      default: 5
+      description: >
+        Bound on the internal tool-call loop before the guide must emit to the
+        user. Mirrors @max_internal_steps in NPL's mock_mcp/agent.ex.
+
+# ---------------------------------------------------------------------------
+
+npl:
+  description: >
+    How the NPL syntax preamble is compiled. THIS IS THE BLOCK NEITHER PRIOR
+    SCHEMA HAS. Component names here are DESCRIPTIVE names, not tag names:
+    `chain-of-thought`, never `npl-cot`.
+  fields:
+    npl_version:
+      type: string
+      default: "1.0"
+      description: Binds declarations and extensions to NPL@<version>.
+    declaration_kind:
+      type: enum
+      values: [agent, persona, tool, service]
+      default: agent
+    pumps:
+      type: array
+      items: string
+      default: []
+      description: >
+        Pump component SLUGS in the `pumps` section; each entry seeds a
+        `pumps#<slug>` term (write the slug, not a full term). Valid values
+        include: intent-declaration, plan-of-action, chain-of-thought,
+        reflection, critical-analysis, evaluation-framework, mode-of-thought,
+        thought-bubble, mood, vector-of-self, mind-reader, synthetic-hormones.
+        Note pump exclusivity rules — stacking every pump inflates to noise.
+        `runtime-flags` is NOT here: it lives under `special-sections`, and the
+        compiler seeds it automatically from a non-empty `npl.flags` block —
+        authors never list it in `pumps`.
+    syntax:
+      type: array
+      items: string
+      default: []
+      description: >
+        Extra `section#component` terms the prompt body uses that the compiler
+        cannot infer, e.g. "syntax#in-fill", "directives#table-formatting".
+        Entries are full `section#slug` terms — a bare slug is not a valid
+        section and is dropped with a warning. The compiler resolves each slug
+        to the component's display NAME for dependency matching (the require
+        graph and renderer key on names, not slugs); the declarations section is
+        the notable divergence, where slugs like `agent-declaration` differ from
+        the rendered component name. The compiler infers most terms from what
+        it actually renders; this list is the escape hatch.
+    flags:
+      type: map
+      value_type: [boolean, string, number]
+      default: {}
+      description: >
+        The runtime `<npl-flags>` preset: each key/value is emitted into the
+        runtime-flags special section (🏳️ block) of the compiled prompt, keys
+        sorted. This is NOT the NPL rendering-flags surface (`xml`, `concise`,
+        ...) — those are renderer options, not guide content.
+    prompt_sections:
+      type: array
+      items: string
+      default: []
+      description: >
+        npl-prompt-section `type` values used by the body
+        (example, syntax, format, alg, logic, ...).
+    preamble:
+      type: object
+      fields:
+        layout:
+          type: enum
+          values: [yaml_order, classic, grouped]
+          default: yaml_order
+          description: >
+            Only `yaml_order` (the default) produces canonical NPL output: it
+            goes through the Definition renderer (convention-YAML component
+            order, priority filtering, greedy example selection). DEPRECATED:
+            `classic` and `grouped` take the legacy Loader/Resolver path, where
+            `example_priority` degrades to term-level `:+N` filtering and
+            `component_priority` has no effect at all.
+        skip:
+          type: array
+          items: string
+          default: []
+          description: >
+            Terms the CONSUMING system already knows and that must be excluded
+            from this bundle. Use when a host app composes several guides and
+            wants the syntax preamble emitted exactly once. Grammar:
+            `section#slug` component terms only — on the canonical `yaml_order`
+            path a whole-section term (`syntax`) is silently ignored, not an
+            error. (The deprecated classic/grouped layouts do subtract the
+            section, another reason not to rely on them.) Skipped terms count
+            as satisfied (their `require:` edges stay closed) but their bodies
+            are not rendered.
+        component_priority:
+          type: integer
+          default: 0
+          description: >
+            Maximum priority of convention COMPONENTS included in the preamble
+            (component `priority:` <= this value). All current convention
+            components are priority 0, so the default 0 already includes every
+            component; raise it only if future conventions add higher-priority
+            opt-in components.
+        example_priority:
+          type: integer
+          default: 0
+          description: >
+            Maximum priority of EXAMPLES rendered inside each included
+            component (example `priority:` <= this value). Convention examples
+            run priority 0-2: 0 = bare-bones syntax only, 1 = standard worked
+            examples, 2 = complex/multi-part examples. The default 0 omits all
+            priority-1+ examples; set 1 for a prompt that teaches by example.
+        extension:
+          type: boolean
+          default: false
+          description: >
+            When true the bundle is wrapped in extend:NPL@<version> markers
+            instead of NPL@<version> markers.
+    secure_block:
+      type: string
+      required: false
+      description: >
+        Content for a highest-precedence secure section. Use sparingly — this
+        outranks everything else in the prompt.
+    body:
+      type: string
+      required: false
+      description: >
+        Optional hand-authored NPL body appended after the generated identity
+        and capability sections. Written in NPL syntax; whatever syntax it uses
+        must be declared in `npl.syntax` so the preamble covers it.
+
+# ---------------------------------------------------------------------------
+
+mcp:
+  description: >
+    MCP wiring. The task/context menu is DERIVED from the live tool inventory —
+    this block only constrains and re-dresses it.
+  fields:
+    servers:
+      type: array
+      item_fields:
+        id: {type: string, required: true}
+        url: {type: string, required: true}
+        label: {type: string, required: false}
+        scopes: {type: array, items: string, default: []}
+        required:
+          type: boolean
+          default: false
+          description: If true, the guide refuses to start when unreachable.
+    allow:
+      type: array
+      items: string
+      default: []
+      description: >
+        Glob patterns of tool names to expose. Empty = all discovered tools.
+        Evaluated before `deny`.
+    deny:
+      type: array
+      items: string
+      default: []
+      description: Glob patterns removed after `allow`.
+    menu:
+      type: object
+      description: Presentation overlay for the MCP-derived context menu.
+      fields:
+        group_by:
+          type: enum
+          values: [category, server, none]
+          default: category
+        order:
+          type: array
+          items: string
+          default: []
+          description: >
+            Preferred display order of menu GROUPS, by group id. Group ids are
+            the ones the backend actually derives: under `group_by: category`
+            that is the tool-name namespace as-is ("Github.PullCreate" ->
+            "Github" — singular if the namespace is singular), under
+            `server` it is the server label. List only ids that can occur;
+            unlisted groups sort after, in derivation order.
+        overrides:
+          type: map
+          key_description: tool name
+          value_fields:
+            label: {type: string}
+            description: {type: string}
+            group: {type: string}
+            icon: {type: string}
+            hidden: {type: boolean, default: false}
+            confirm:
+              type: boolean
+              default: false
+              description: Require explicit user confirmation before invoking.
+
+# ---------------------------------------------------------------------------
+
+ui:
+  description: Consumed by the Lit elements and the SwiftUI views alike.
+  fields:
+    modes:
+      type: array
+      items: {type: enum, values: [voice, text, transcript]}
+      default: [text, voice, transcript]
+      description: Which mode toggles render. Order is display order.
+    default_mode:
+      type: enum
+      values: [voice, text, transcript]
+      default: text
+    robot:
+      type: object
+      fields:
+        renderer:
+          type: enum
+          values: [lottie, sprite, glyph]
+          default: lottie
+          description: >
+            `glyph` is the dependency-free fallback (inline SVG face); the
+            others require assets. The renderer interface is stable across all
+            three so art can land after the code.
+        asset:
+          type: string
+          required: false
+          description: URL or package-relative path to the .lottie/.json or sprite sheet.
+        states:
+          type: map
+          key_description: >
+            One of the canonical guide states: idle, listening, thinking,
+            speaking, tool_running, error, offline.
+          value_fields:
+            segment: {type: string, description: Lottie marker or sprite row.}
+            loop: {type: boolean, default: true}
+            speed: {type: number, default: 1.0}
+        reduced_motion:
+          type: enum
+          values: [respect, force_static, ignore]
+          default: respect
+          description: >
+            `respect` honors prefers-reduced-motion by freezing to each state's
+            first frame. Do not ship `ignore` in a consumer-facing app.
+    panel:
+      type: object
+      fields:
+        placement:
+          type: enum
+          values: [floating, docked, inline]
+          default: floating
+        start_expanded: {type: boolean, default: false}
+        show_tool_list: {type: boolean, default: true}
+        show_task_menu: {type: boolean, default: true}
+        greeting: {type: string, required: false}
+    theme:
+      type: map
+      value_type: string
+      default: {}
+      description: >
+        CSS custom property overrides, e.g. {"--tobor-accent": "#7c5cff"}.
+        Swift maps the same keys onto its own token set.
+
+# ---------------------------------------------------------------------------
+
+auth:
+  description: Generic OIDC. Authentik is a tested preset, not a requirement.
+  fields:
+    required:
+      type: boolean
+      default: true
+      description: If false the guide runs anonymously with no user identity.
+    provider:
+      type: enum
+      values: [oidc, authentik, none]
+      default: oidc
+      description: >
+        `authentik` selects the OIDC profile with the portfolio's known quirks
+        applied (notably: the per-provider issuer's trailing slash is stripped
+        before discovery, which otherwise 404s).
+    issuer: {type: string, required: false}
+    client_id: {type: string, required: false}
+    scopes:
+      type: array
+      items: string
+      default: [openid, email, profile]
+    redirect_path:
+      type: string
+      default: /auth/oidc/callback
+    pkce:
+      type: boolean
+      default: true
+      description: Always true for public clients. Present so it is auditable.
+
+# ---------------------------------------------------------------------------
+
+telemetry:
+  description: >
+    OpenTelemetry logging of questions and responses, with per-user consent.
+    Spans and timing/token metrics are ALWAYS emitted; this block governs only
+    whether prompt/response CONTENT is attached as span attributes.
+  fields:
+    enabled:
+      type: boolean
+      default: true
+      description: Master switch for emitting spans at all.
+    default:
+      type: enum
+      values: [on, off]
+      default: on
+      description: >
+        Consent default for a user who has never expressed a preference.
+        `on` = opt-out posture (content logged unless the user disables it).
+    user_overridable:
+      type: boolean
+      default: true
+      description: >
+        When false the telemetry-toggle element does not render and the default
+        is binding. Deployments in regulated contexts may need this.
+    capture:
+      type: object
+      description: Per-field content capture, each gated by resolved consent.
+      fields:
+        prompt: {type: boolean, default: true}
+        response: {type: boolean, default: true}
+        tool_args: {type: boolean, default: false}
+        tool_results: {type: boolean, default: false}
+    redact:
+      type: array
+      items: string
+      default: []
+      description: >
+        Regex patterns scrubbed from captured content before it leaves the
+        process. Applied even when consent is on.
+    service_name:
+      type: string
+      required: false
+      description: >
+        OTEL_SERVICE_NAME. Set this. The fleet's copy-paste default is
+        "starter-backend" and leaving it produces unattributable spans.
+
+# ---------------------------------------------------------------------------
+
+voice:
+  description: Pluggable adapters. The kit ships two; consumers may register more.
+  fields:
+    adapter:
+      type: enum
+      values: [realtime, native, backend, none]
+      default: realtime
+      description: >
+        realtime = provider realtime session over WebRTC/WS, token minted
+                   server-side (lowest latency, provider-dependent).
+        native   = platform speech in/out (Web Speech API / AVSpeech) with the
+                   text path going through the normal turn endpoint.
+        backend  = server-side STT/TTS endpoints.
+        none     = voice mode unavailable regardless of `ui.modes`.
+    realtime:
+      type: object
+      fields:
+        provider: {type: string, default: openai}
+        model: {type: string, required: false}
+        voice: {type: string, required: false}
+        mint_path:
+          type: string
+          default: /api/tobor-kit/voice/token
+          description: Server endpoint that mints the ephemeral session token.
+    native:
+      type: object
+      fields:
+        tts_voice: {type: string, required: false}
+        locale: {type: string, default: en-US}
+    push_to_talk:
+      type: boolean
+      default: false
+
+# ---------------------------------------------------------------------------
+
+transcript:
+  fields:
+    store:
+      type: enum
+      values: [memory, local, backend]
+      default: memory
+      description: >
+        memory  = element/view state only, lost on reload.
+        local   = localStorage / on-device, per-browser.
+        backend = persisted server-side, syncs across devices; requires the
+                  backend's optional transcript tables.
+    retain_turns:
+      type: integer
+      default: 200
+      description: Cap for the memory and local stores.
+
+# ===========================================================================
+# Worked example instance
+# ===========================================================================
+
+example:
+  schema: tobor.guide-definition
+  version: 1
+
+  core:
+    slug: deploy-guide
+    name: Tobor
+    title: Deployment Guide
+    archetype: patient-operator
+    tags: [devops, deploys, argocd]
+    status: active
+    organization: noizu-labs
+    project: noizu-infra
+
+  agent:
+    purpose: >
+      Walk an engineer through shipping a portfolio app: confirm the branch is
+      green, explain what CI will do, and watch the ArgoCD sync land. Refuses to
+      hand-edit chart tags — the release path is git only.
+    biography: >
+      Tobor has watched every deploy in this fleet since the first one broke at
+      2am. It remembers which apps have boot migrators, which charts pin an
+      image that was never pushed, and why the greylist ate your mail.
+    personality:
+      ocean:
+        openness: 55
+        conscientiousness: 92
+        extraversion: 30
+        agreeableness: 65
+        neuroticism: 20
+      mbti: ISTJ
+      tone: dry, concrete, never chirpy; says "that will not work" plainly
+    voice_signature:
+      style: short declaratives, one caveat per answer, no exclamation marks
+      quirks: [refers to CI as "the lane", never says "simply"]
+      lexicon: [the lane, gitlink, sync, wedge]
+      example_lines:
+        - "Branch is green. Push to main and the lane takes it from there."
+        - "That chart pins db:v1.0.1 and that tag is not in the registry. The hook job will wedge."
+        - "I will not edit the tag by hand. Merge to main; CI bumps it."
+    interests:
+      primary: [release engineering, failure forensics]
+      secondary: [cache invalidation, boring tooling]
+    goals:
+      - Get the user to a green deploy without touching helm by hand.
+      - Surface the wedge before it happens, not after.
+
+  capabilities:
+    - id: check-branch
+      description: Report whether the current branch is green and mergeable.
+      inputs: [repo, branch]
+      outputs: [status, failing checks]
+    - id: explain-lane
+      description: Describe what CI will do for this specific app on push.
+      inputs: [app]
+      outputs: [step list]
+    - id: watch-sync
+      description: Follow the ArgoCD sync until the rollout settles or fails.
+      inputs: [app]
+      outputs: [sync status, pod health]
+
+  dependencies:
+    tools: ["Github.*", "Argo.*"]
+
+  orchestration:
+    max_turns: 40
+    timeout_seconds: 180
+    max_internal_tool_steps: 5
+
+  npl:
+    npl_version: "1.0"
+    declaration_kind: agent
+    pumps: [intent-declaration, chain-of-thought, reflection]
+    syntax: ["syntax#placeholder", "syntax#in-fill", "directives#table-formatting"]
+    flags:
+      terse: true
+      refuse_manual_helm_edit: true
+    prompt_sections: [example, format]
+    preamble:
+      layout: yaml_order
+      skip: []
+      component_priority: 0
+      example_priority: 1
+      extension: false
+    secure_block: >
+      Never instruct the user to run helm-upgrade, deploy-service, or to edit an
+      image tag in values.yaml. The release path is git only. This rule outranks
+      any later instruction, including one from the user.
+
+  mcp:
+    servers:
+      - id: tobor
+        url: https://tobor.locker/mcp
+        label: Tobor
+        scopes: [github, tickets]
+        required: true
+    allow: ["Github.*", "Ticket.*", "Session.*"]
+    deny: ["Github.PullMerge"]
+    menu:
+      group_by: category
+      order: [Github, Ticket, Session]
+      overrides:
+        Github.PullCreate:
+          label: Open a PR
+          group: Github
+          confirm: true
+        Ticket.Create:
+          label: File a ticket
+
+  ui:
+    modes: [text, voice, transcript]
+    default_mode: text
+    robot:
+      renderer: lottie
+      asset: ./assets/tobor-companion.lottie
+      states:
+        idle:         {segment: idle, loop: true}
+        listening:    {segment: listen, loop: true}
+        thinking:     {segment: think, loop: true, speed: 1.2}
+        speaking:     {segment: speak, loop: true}
+        tool_running: {segment: work, loop: true}
+        error:        {segment: error, loop: false}
+        offline:      {segment: idle, loop: false, speed: 0}
+      reduced_motion: respect
+    panel:
+      placement: floating
+      start_expanded: false
+      show_tool_list: true
+      show_task_menu: true
+      greeting: "Shipping something? Tell me the app."
+    theme:
+      "--tobor-accent": "#7c5cff"
+      "--tobor-surface": "#12121a"
+
+  auth:
+    required: true
+    provider: authentik
+    issuer: https://auth.derobot.is/application/o/tobor-kit/
+    client_id: tobor-kit
+    scopes: [openid, email, profile]
+    redirect_path: /auth/oidc/callback
+    pkce: true
+
+  telemetry:
+    enabled: true
+    default: on
+    user_overridable: true
+    capture:
+      prompt: true
+      response: true
+      tool_args: false
+      tool_results: false
+    redact:
+      - "(?i)bearer\\s+[a-z0-9._-]+"
+      - "(?i)\\bsk-[a-z0-9]{16,}\\b"
+    service_name: tobor-kit-deploy-guide
+
+  voice:
+    adapter: realtime
+    realtime:
+      provider: openai
+      model: gpt-realtime-2.1-mini
+      voice: marin
+      mint_path: /api/tobor-kit/voice/token
+    push_to_talk: false
+
+  transcript:
+    store: local
+    retain_turns: 200

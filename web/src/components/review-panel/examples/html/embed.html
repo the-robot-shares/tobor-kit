@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tobor-review-panel</title>
+    <!-- CDN latest rewrites Lit to vendor/ — no import map required. -->
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/review-panel/review-panel.js"></script>
+    <style>
+      tobor-review-panel {
+        --tobor-kit-review-max-height: 24rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Reviews</h1>
+    <div class="demo-frame">
+      <tobor-review-panel artifact-id="artifact-1"></tobor-review-panel>
+    </div>
+    <script type="module">
+      const el = document.querySelector('tobor-review-panel');
+      const artifactId = el.artifactId || 'artifact-1';
+
+      async function load() {
+        const res = await fetch(`/artifacts/${encodeURIComponent(artifactId)}/reviews`, {
+          credentials: 'same-origin',
+        });
+        if (!res.ok) return;
+        const body = await res.json();
+        el.reviews = body.reviews ?? [];
+      }
+
+      el.addEventListener('review-submit', (event) => {
+        // Host-owned persist. Never a secret on the tag.
+        fetch(`/artifacts/${encodeURIComponent(event.detail.artifactId)}/reviews`, {
+          method: 'POST',
+          headers: {'content-type': 'application/json'},
+          credentials: 'same-origin',
+          body: JSON.stringify({body: event.detail.body}),
+        }).then((res) => {
+          if (res.ok) return load();
+        });
+      });
+      el.addEventListener('review-resolve', (event) => {
+        fetch(
+          `/artifacts/${encodeURIComponent(artifactId)}/reviews/${encodeURIComponent(event.detail.id)}/resolve`,
+          {method: 'POST', credentials: 'same-origin'},
+        ).then((res) => {
+          if (res.ok) return load();
+        });
+      });
+
+      load();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,28 @@
+# hex packages
+elixir/tobor_kit*.tar
+
+# Node
+node_modules/
+dist/
+
+# Elixir
+_build/
+deps/
+.elixir_ls/
+*.beam
+
+# macOS
+.DS_Store
+
+# Swift / Xcode
+.build/
+*.xcuserdatad
+
+# Go
+/go/bin/
+
+# Python
+__pycache__/
+
+# Claude Code harness (worktrees, session state)
+.claude/

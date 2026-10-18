@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>noizu-auth</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "@noizu/tobor-kit/auth.js": "https://cdn.derobot.is/tobor-kit/latest/components/auth/noizu-auth.js"
+        }
+      }
+    </script>
+    <style>
+      body { margin: 0; font-family: system-ui, sans-serif; }
+      noizu-auth { --auth-accent: #3759bb; }
+    </style>
+  </head>
+  <body>
+    <!-- Host must issue the pre-login HttpOnly session + browser binding before this page.
+         invite-token-mode="required" is UX only — the host must reject token-less register too
+         (see docs/backend-requirements.md, "invite_token policy"). -->
+    <noizu-auth endpoint="/auth/socket" mode="interstitial" invite-token-mode="required">
+      <strong slot="brand">My product</strong>
+      <img slot="avatar" src="/images/robot.png" alt="Your robot guide" />
+    </noizu-auth>
+    <script type="module">
+      import '@noizu/tobor-kit/auth.js';
+      const auth = document.querySelector('noizu-auth');
+      auth.options = {password: true, magicLink: false, otp: false, signup: true};
+      auth.text = {loginTitle: 'Welcome aboard', description: 'Continue to your workspace'};
+      auth.addEventListener('auth-redirect', (event) => {
+        console.info('auth-redirect', event.detail.url);
+      });
+      auth.addEventListener('auth-error', (event) => {
+        console.warn(event.detail.message);
+      });
+    </script>
+
+    <!--
+      Alternative: six-pipe login as an anchored dropdown (signup opens the modal above instead,
+      per spec). See docs/configuration.md and docs/backend-requirements.md for the merge-flow
+      contract behind `noizu-auth-merge-required` / `noizu-auth-merge-confirmed`.
+    -->
+    <noizu-auth id="header-auth" endpoint="/auth/socket" mode="dropdown">
+      <button slot="trigger" type="button">Sign in</button>
+    </noizu-auth>
+    <script type="module">
+      import '@noizu/tobor-kit/auth.js';
+      const headerAuth = document.getElementById('header-auth');
+      headerAuth.pipes = ['email_password', 'mobile_otp', 'google', 'authentik', 'github'];
+      // Optional: gate the mobile pipes to SMS-capable regions (host-owned public config,
+      // not part of the /auth/socket RPC surface — see docs/backend-requirements.md).
+      fetch('/auth/sms-regions').then((r) => r.json()).then((smsRegions) => {
+        headerAuth.smsRegions = smsRegions; // {supported: ['US','CA','GB',...], message?}
+      });
+      headerAuth.addEventListener('noizu-auth-sms-region-unsupported', (event) => {
+        // The server rejected the submit with error.code "sms_region_unsupported" — the
+        // component already rendered event.detail.message inline; this is telemetry only.
+        console.info('sms region unsupported', event.detail.pipe, event.detail.message);
+      });
+      headerAuth.addEventListener('noizu-auth-merge-required', (event) => {
+        // event.detail = {challengeId, pipes: [{type, masked}]}. `masked` is always masked.
+        console.info('account already exists, pick an existing pipe to link', event.detail.pipes);
+      });
+      headerAuth.addEventListener('noizu-auth-merge-confirmed', (event) => {
+        console.info('merge confirmed', event.detail.challengeId);
+      });
+      headerAuth.addEventListener('noizu-auth-otp-requested', (event) => {
+        console.info('otp requested for', event.detail.pipe);
+      });
+    </script>
+
+    <!--
+      Alternative: the REST transport. Same element and same events; the wire is
+      POST /api/v1/auth/* with Bearer-token sessions instead of the auth WebSocket.
+      Leaving `transport` off keeps the WebSocket behaviour above unchanged.
+    -->
+    <noizu-auth id="rest-auth" transport="rest" api-base="/api/v1" mode="modal">
+      <strong slot="brand">My product</strong>
+    </noizu-auth>
+    <script type="module">
+      import '@noizu/tobor-kit/auth.js';
+      const restAuth = document.getElementById('rest-auth');
+      restAuth.pipes = ['email_password', 'mobile_otp', 'google', 'github'];
+      // restAuth.withCredentials = true;  // ONLY for a cookie-session REST backend (bring your own CSRF token).
+      restAuth.addEventListener('noizu-auth-success', (event) => {
+        const session = event.detail.session; // {tokenType:'Bearer', accessToken, refreshToken, expiresIn, user, organizations}
+        // The component never writes tokens to localStorage/sessionStorage — that choice is
+        // security-relevant and belongs to the host. See docs/backend-requirements.md.
+        window.myApp?.adoptSession(session);
+      });
+      restAuth.addEventListener('noizu-auth-merge-required', (event) => {
+        // HTTP 409 {status:"merge_required"} maps onto the same state as the socket reply.
+        console.info('merge required', event.detail.pipes);
+      });
+    </script>
+  </body>
+</html>

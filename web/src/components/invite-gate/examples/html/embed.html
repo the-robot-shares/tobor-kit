@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>noizu-invite-gate embed</title>
+    <!-- CDN latest rewrites Lit to vendor/ — no import map required. -->
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/invite-gate/noizu-invite-gate.js"></script>
+  </head>
+  <body>
+    <!-- Served at /auth/invite-required for a signed-in account held by the invite gate. -->
+    <noizu-invite-gate brand="therobotplans" email="me@example.com" sign-out-url="/logout" continue-url="/app"></noizu-invite-gate>
+    <script type="module">
+      const gate = document.querySelector('noizu-invite-gate');
+      // Prefill from an invite link: /auth/invite-required?invite=AbC123
+      gate.token = new URLSearchParams(location.search).get('invite') ?? '';
+      gate.addEventListener('noizu-invite-error', (event) => console.info('redeem failed', event.detail.code));
+      gate.addEventListener('noizu-invite-redeemed', (event) => console.info('redeemed', event.detail.result));
+    </script>
+  </body>
+</html>

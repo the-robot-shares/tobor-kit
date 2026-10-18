@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>tobor-task-menu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- CDN build rewrites lit → relative vendor/; no import map required. -->
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/task-menu/task-menu.js"></script>
+  </head>
+  <body>
+    <div class="demo-frame">
+      <tobor-task-menu></tobor-task-menu>
+    </div>
+    <script type="module">
+      const el = document.querySelector('tobor-task-menu');
+      // Host-owned: OIDC access token. Never a provider key or cookie.
+      const token = sessionStorage.getItem('tobor-access-token');
+      const headers = token ? {Authorization: `Bearer ${token}`} : {};
+      const res = await fetch('/api/tobor-kit/mcp/tools', {headers});
+      if (res.ok) {
+        el.inventory = await res.json();
+      }
+      // 401 / 502 / missing guide → leave unset → "No tasks available."
+      el.addEventListener('tobor-task-select', (e) => {
+        // Advisory: host may send e.detail.tool.name as task_id on POST /turn.
+        console.log('tobor-task-select', e.detail.tool);
+      });
+    </script>
+  </body>
+</html>

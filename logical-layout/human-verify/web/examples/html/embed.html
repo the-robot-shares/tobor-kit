@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>noizu-human-verify</title>
+    <!-- CDN latest rewrites Lit to vendor/ — no import map required. -->
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/human-verify/noizu-human-verify.js"></script>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Human verify</h1>
+    <!-- provider=none emits verified {provider:'none', token:''} on connect (host opted out).
+         Switch to provider="turnstile"| "recaptcha-v3" and set site-key to the PUBLIC site key only. -->
+    <noizu-human-verify provider="none" action="signup"></noizu-human-verify>
+    <script type="module">
+      const el = document.querySelector('noizu-human-verify');
+      el.addEventListener('verified', (event) => {
+        // NOT proof. Host must POST the token to siteverify (server-side secret).
+        fetch('/verify', {
+          method: 'POST',
+          headers: {'content-type': 'application/json'},
+          body: JSON.stringify(event.detail),
+        })
+          .then((res) => res.json())
+          .then((body) => console.info('verify', body))
+          .catch(() => {});
+      });
+    </script>
+  </body>
+</html>

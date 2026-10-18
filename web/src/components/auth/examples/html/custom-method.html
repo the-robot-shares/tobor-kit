@@ -1,0 +1,48 @@
+<!--
+  noizu-auth in custom-method mode: the kit's modal chrome around a host-owned sign-in.
+
+  The element makes NO network request in this mode (no /auth/config, no WebSocket,
+  no REST call) and mounts no human-verify widget. Everything between "user clicks"
+  and "session exists" is the host's code; the element only needs to hear the outcome.
+
+  Import map / CDN: see embed.html for the lit import map. npm consumers:
+    import '@noizu/tobor-kit/auth.js';
+-->
+<noizu-auth id="auth" mode="modal" custom-method>
+  <strong slot="brand">My product</strong>
+
+  <!-- One pane per flow. `method` (no suffix) is the fallback for both. -->
+  <div slot="method-login">
+    <button type="button" id="sign">sign with key</button>
+  </div>
+  <div slot="method-register">
+    <button type="button" id="generate">generate a key</button>
+    <button type="button" id="to-login">already have a key? log in</button>
+  </div>
+</noizu-auth>
+
+<script type="module">
+  const auth = document.getElementById('auth');
+  auth.text = {loginTitle: 'sign in with your key', signupTitle: 'create a key'};
+
+  document.getElementById('sign').addEventListener('click', async () => {
+    try {
+      // Host-owned: fetch a challenge, sign it, have the server verify and set the session.
+      const session = await signInWithDeviceKey();
+      auth.complete({entityId: session.entityId}); // fires auth-success, closes the dialog
+    } catch (error) {
+      auth.fail(error); // fires auth-error, shows the message, stays open
+    }
+  });
+
+  // Slotted content switches panes by event (or set auth.flow directly).
+  document.getElementById('to-login').addEventListener('click', (event) => {
+    event.target.dispatchEvent(new CustomEvent('auth-flow-switch', {detail: {flow: 'login'}, bubbles: true, composed: true}));
+  });
+
+  auth.addEventListener('auth-success', (event) => location.assign('/app'));
+  auth.addEventListener('auth-close', () => console.log('dismissed'));
+
+  // Open it: auth.flow = 'login'; auth.open = true;
+  async function signInWithDeviceKey() { throw new Error('replace with the product sign-in'); }
+</script>

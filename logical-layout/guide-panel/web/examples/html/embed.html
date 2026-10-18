@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tobor-guide-panel</title>
+    <!-- CDN builds rewrite lit to vendor/; this map is for hosts that load the npm ES modules. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "lit": "https://cdn.derobot.is/tobor-kit/latest/vendor/lit.js",
+          "lit/decorators.js": "https://cdn.derobot.is/tobor-kit/latest/vendor/lit-decorators.js"
+        }
+      }
+    </script>
+    <style>
+      :root {
+        --tobor-kit-panel-width: 360px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="demo-frame">
+      <tobor-guide-panel
+        id="guide"
+        base-url="/api/tobor-kit"
+        placement="floating"
+      ></tobor-guide-panel>
+    </div>
+    <script type="module">
+      import 'https://cdn.derobot.is/tobor-kit/latest/components/guide-panel/guide-panel.js';
+
+      const panel = document.getElementById('guide');
+      // Host-owned: set panel.token from the session after OIDC. Never a provider key.
+      panel.token = window.__TOBOR_ACCESS_TOKEN;
+      panel.addEventListener('tobor-task-invoked', (e) => console.info('task', e.detail));
+      panel.addEventListener('tobor-turn-submitted', (e) => console.info('submitted', e.detail));
+      panel.addEventListener('tobor-state-change', (e) => console.info('state', e.detail));
+      panel.addEventListener('tobor-turn-error', (e) => console.warn('error', e.detail));
+      panel.addEventListener('tobor-turn-message', (e) => console.info('message', e.detail));
+    </script>
+  </body>
+</html>

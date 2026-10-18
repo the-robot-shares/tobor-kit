@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tobor-asset-view / tobor-asset-editor</title>
+    <!-- CDN latest rewrites Lit to vendor/ — no import map required. -->
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/asset/asset-view.js"></script>
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/asset/asset-editor.js"></script>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Asset</h1>
+    <!-- asset is a JS property, not an HTML attribute. -->
+    <tobor-asset-view></tobor-asset-view>
+    <tobor-asset-editor></tobor-asset-editor>
+    <script type="module">
+      const asset = {
+        id: 'note-1',
+        name: 'readme.txt',
+        mime: 'text/plain',
+        body: 'Hello from the host.',
+      };
+      const view = document.querySelector('tobor-asset-view');
+      const editor = document.querySelector('tobor-asset-editor');
+      view.asset = asset;
+      editor.asset = asset;
+      view.addEventListener('asset-open', () => {
+        // Optional. Host may open a viewer. Kit does not navigate.
+      });
+      editor.addEventListener('asset-save', (event) => {
+        // Host-owned persist. Ignore if this file is opened without a server.
+        fetch('/assets/' + event.detail.id, {
+          method: 'PUT',
+          headers: {'content-type': 'application/json'},
+          body: JSON.stringify(event.detail),
+        }).catch(() => {});
+      });
+    </script>
+  </body>
+</html>

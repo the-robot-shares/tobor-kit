@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>noizu-waitlist</title>
+    <!-- CDN latest rewrites Lit to vendor/ — no import map required. -->
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/waitlist/noizu-waitlist.js"></script>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+      .field-group { display: grid; gap: 0.25rem; margin: 0.5rem 0; }
+      .field-input, .field-select, .field-textarea { padding: 0.4rem; }
+      .btn { padding: 0.4rem 0.8rem; cursor: pointer; }
+      .success { color: #0a0; }
+      .danger { color: #c00; }
+    </style>
+  </head>
+  <body>
+    <h1>Waitlist</h1>
+    <!-- Omit api → https://foryou.therobotlives.com. Replace slug with a real ForYou list. -->
+    <noizu-waitlist slug="my-site" source="landing"></noizu-waitlist>
+    <script type="module">
+      const el = document.querySelector('noizu-waitlist');
+      el.addEventListener('waitlist-success', (event) => {
+        console.info('waitlist-success', event.detail);
+      });
+      el.addEventListener('waitlist-error', (event) => {
+        console.warn('waitlist-error', event.detail);
+      });
+    </script>
+  </body>
+</html>

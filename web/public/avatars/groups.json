@@ -1,0 +1,188 @@
+[
+  {
+    "id": "orbit",
+    "label": "Orbit",
+    "default": {
+      "src": "avatars/orbit/states.png",
+      "columns": 4,
+      "rows": 2,
+      "column": 0,
+      "row": 0
+    },
+    "states": {
+      "idle": {
+        "src": "avatars/orbit/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 0,
+        "row": 0
+      },
+      "listening": {
+        "src": "avatars/orbit/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 1,
+        "row": 0
+      },
+      "thinking": {
+        "src": "avatars/orbit/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 2,
+        "row": 0
+      },
+      "speaking": {
+        "src": "avatars/orbit/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 3,
+        "row": 0
+      },
+      "tool_running": {
+        "src": "avatars/orbit/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 0,
+        "row": 1
+      },
+      "error": {
+        "src": "avatars/orbit/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 1,
+        "row": 1
+      },
+      "offline": {
+        "src": "avatars/orbit/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 2,
+        "row": 1
+      }
+    }
+  },
+  {
+    "id": "pip",
+    "label": "Pip",
+    "default": {
+      "src": "avatars/pip/states.png",
+      "columns": 4,
+      "rows": 2,
+      "column": 0,
+      "row": 0
+    },
+    "states": {
+      "idle": {
+        "src": "avatars/pip/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 0,
+        "row": 0
+      },
+      "listening": {
+        "src": "avatars/pip/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 1,
+        "row": 0
+      },
+      "thinking": {
+        "src": "avatars/pip/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 2,
+        "row": 0
+      },
+      "speaking": {
+        "src": "avatars/pip/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 3,
+        "row": 0
+      },
+      "tool_running": {
+        "src": "avatars/pip/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 0,
+        "row": 1
+      },
+      "error": {
+        "src": "avatars/pip/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 1,
+        "row": 1
+      },
+      "offline": {
+        "src": "avatars/pip/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 2,
+        "row": 1
+      }
+    }
+  },
+  {
+    "id": "nova",
+    "label": "Nova",
+    "default": {
+      "src": "avatars/nova/states.png",
+      "columns": 4,
+      "rows": 2,
+      "column": 0,
+      "row": 0
+    },
+    "states": {
+      "idle": {
+        "src": "avatars/nova/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 0,
+        "row": 0
+      },
+      "listening": {
+        "src": "avatars/nova/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 1,
+        "row": 0
+      },
+      "thinking": {
+        "src": "avatars/nova/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 2,
+        "row": 0
+      },
+      "speaking": {
+        "src": "avatars/nova/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 3,
+        "row": 0
+      },
+      "tool_running": {
+        "src": "avatars/nova/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 0,
+        "row": 1
+      },
+      "error": {
+        "src": "avatars/nova/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 1,
+        "row": 1
+      },
+      "offline": {
+        "src": "avatars/nova/states.png",
+        "columns": 4,
+        "rows": 2,
+        "column": 2,
+        "row": 1
+      }
+    }
+  }
+]

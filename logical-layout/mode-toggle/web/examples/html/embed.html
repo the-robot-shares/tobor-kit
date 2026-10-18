@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tobor-mode-toggle</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "lit": "https://cdn.derobot.is/tobor-kit/latest/vendor/lit.js",
+          "lit/decorators.js": "https://cdn.derobot.is/tobor-kit/latest/vendor/lit-decorators.js"
+        }
+      }
+    </script>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 2rem;
+        background: #12131a;
+        color: #e8e9f0;
+      }
+    </style>
+  </head>
+  <body>
+    <tobor-mode-toggle id="toggle" mode="text"></tobor-mode-toggle>
+    <pre id="log"></pre>
+    <script type="module">
+      import 'https://cdn.derobot.is/tobor-kit/latest/components/mode-toggle/mode-toggle.js';
+
+      const el = document.querySelector('#toggle');
+      // Host-owned: modes is a JS property, not an HTML attribute.
+      el.modes = ['text', 'voice', 'transcript'];
+      el.addEventListener('tobor-mode-change', (event) => {
+        document.querySelector('#log').textContent = JSON.stringify(event.detail);
+      });
+    </script>
+  </body>
+</html>

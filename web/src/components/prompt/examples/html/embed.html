@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>prompt family</title>
+    <!-- CDN latest rewrites Lit to vendor/ — no import map required. -->
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/prompt/tobor-prompt-library.js"></script>
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/prompt/tobor-prompt-history.js"></script>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 48rem; margin: 2rem auto; padding: 0 1rem; display: grid; gap: 1rem; }
+    </style>
+  </head>
+  <body>
+    <div class="demo-frame">
+      <tobor-prompt-library></tobor-prompt-library>
+      <tobor-prompt-history></tobor-prompt-history>
+    </div>
+    <script type="module">
+      const libraryEl = document.querySelector('tobor-prompt-library');
+      const historyEl = document.querySelector('tobor-prompt-history');
+
+      // Host-owned snapshot. Never a secret on the element.
+      const prompts = [
+        {
+          id: 'sys',
+          title: 'System',
+          body: 'You are a helpful assistant.\nDo not render HTML.\n<section>stays source</section>',
+          starred: true,
+        },
+        {id: 'brief', title: 'Brief', body: 'Be concise.\nNo HTML.'},
+      ];
+      const entries = [
+        {id: 'sys-v1', title: 'System', at: '2026-01-01T12:00:00Z', version: 1},
+        {id: 'sys-v2', title: 'System', at: '2026-02-01T12:00:00Z', version: 2, starred: true},
+      ];
+
+      libraryEl.prompts = prompts;
+      historyEl.entries = entries;
+      historyEl.diff = {
+        left: {label: 'v1', body: 'You are a helpful assistant.'},
+        right: {label: 'v2', body: 'You are a concise assistant.\nNo HTML.\n<section>stays source</section>'},
+      };
+
+      libraryEl.addEventListener('prompt-select', (event) => {
+        libraryEl.selectedId = event.detail.id;
+      });
+      const persistStar = (event) => {
+        // Host-owned persist. Ignore if this file is opened without a server.
+        fetch(`/prompts/${encodeURIComponent(event.detail.id)}/star`, {
+          method: 'PUT',
+          headers: {'content-type': 'application/json'},
+          credentials: 'same-origin',
+          body: JSON.stringify(event.detail),
+        }).catch(() => {});
+      };
+      libraryEl.addEventListener('prompt-star', persistStar);
+      historyEl.addEventListener('prompt-star', persistStar);
+      historyEl.addEventListener('prompt-fork', (event) => {
+        fetch(`/prompts/${encodeURIComponent(event.detail.id)}/fork`, {
+          method: 'POST',
+          headers: {'content-type': 'application/json'},
+          credentials: 'same-origin',
+          body: JSON.stringify(event.detail),
+        }).catch(() => {});
+      });
+    </script>
+  </body>
+</html>

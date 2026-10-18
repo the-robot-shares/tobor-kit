@@ -1,0 +1,53 @@
+# Default values for the tobor-kit service chart. Namespace-agnostic: every
+# deployment sets image.tag (CI bumps sha-* tags) and, where used, the Infisical
+# secretsPath for its namespace.
+replicas: 1
+
+image:
+  repository: ops.noizu.com/tobor-kit/backend
+  # CI/CD replaces with the built sha-<commit> tag; never hand-edit for release.
+  tag: "sha-eb1ebf9"
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: ops-registry-secret
+
+service:
+  type: ClusterIP
+  port: 8080
+
+# Frozen guide bundle baked into (or mounted into) the image.
+guide:
+  bundlePath: ""
+
+# Public-PKCE OIDC (Authentik). Empty issuer disables OIDC env wiring.
+oidc:
+  issuer: ""
+  redirectUri: ""
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+extraEnv: []
+
+otel:
+  enabled: false
+  collectorEndpoint: "otel-collector.observability-ns.svc.cluster.local:4317"
+
+secrets:
+  # k8s Secret the Infisical operator manages and the pod reads env from.
+  name: tobor-kit-secrets
+  infisical:
+    enabled: true
+    hostAPI: https://infisical.noizu.com/api
+    resyncInterval: 120
+    credentialsSecret: universal-auth-credentials
+    credentialsNamespace: infra
+    projectSlug: k8-infra
+    envSlug: prod
+    secretsPath: "/apps/tobor-kit"

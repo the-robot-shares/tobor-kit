@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>noizu-sg family</title>
+    <!-- CDN latest rewrites Lit to vendor/ — no import map required. -->
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/styleguide/noizu-sg-btn.js"></script>
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/styleguide/noizu-sg-card.js"></script>
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/styleguide/noizu-sg-card-grid.js"></script>
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/styleguide/noizu-sg-status.js"></script>
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/styleguide/noizu-sg-input.js"></script>
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/styleguide/noizu-sg-spec-table.js"></script>
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/styleguide/noizu-sg-steps.js"></script>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 56rem; margin: 2rem auto; padding: 0 1rem; }
+      .row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 1rem 0 2rem; }
+      .stack { display: grid; gap: 0.75rem; margin: 1rem 0 2rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Styleguide</h1>
+    <div class="row">
+      <noizu-sg-btn variant="primary">Primary</noizu-sg-btn>
+      <noizu-sg-btn variant="secondary">Secondary</noizu-sg-btn>
+      <noizu-sg-btn variant="ghost">Ghost</noizu-sg-btn>
+      <noizu-sg-btn variant="danger">Danger</noizu-sg-btn>
+      <noizu-sg-btn size="sm">Small</noizu-sg-btn>
+      <noizu-sg-btn size="lg">Large</noizu-sg-btn>
+      <noizu-sg-btn disabled>Disabled</noizu-sg-btn>
+    </div>
+    <noizu-sg-card-grid columns="3">
+      <noizu-sg-card href="/plans">
+        <span slot="header">Pro</span>
+        Compare features
+        <span slot="footer">From $9/mo</span>
+      </noizu-sg-card>
+      <noizu-sg-card>
+        <span slot="header">Docs</span>
+        Host-only atom. No backend.
+        <span slot="footer">No href</span>
+      </noizu-sg-card>
+      <noizu-sg-card href="/contact">
+        <span slot="header">Contact</span>
+        preventDefault on sg-card-select to own navigation.
+        <span slot="footer">Link card</span>
+      </noizu-sg-card>
+    </noizu-sg-card-grid>
+
+    <h2>Status</h2>
+    <div class="stack">
+      <noizu-sg-status status="ok" label="Ready" description="All checks passed"></noizu-sg-status>
+      <noizu-sg-status status="warn" label="Degraded" description="Retrying"></noizu-sg-status>
+      <noizu-sg-status status="error" label="Failed" description="Host owns recovery"></noizu-sg-status>
+      <noizu-sg-status status="idle" label="Idle"></noizu-sg-status>
+    </div>
+
+    <h2>Input</h2>
+    <div class="stack">
+      <noizu-sg-input name="email" type="email" value=""></noizu-sg-input>
+      <noizu-sg-input name="notes" type="textarea"></noizu-sg-input>
+      <noizu-sg-input name="blocked" disabled value="read only"></noizu-sg-input>
+      <noizu-sg-input name="bad" error value="oops"></noizu-sg-input>
+    </div>
+
+    <h2>Spec</h2>
+    <noizu-sg-spec-table></noizu-sg-spec-table>
+
+    <h2>Steps</h2>
+    <noizu-sg-steps current="1"></noizu-sg-steps>
+
+    <script type="module">
+      document.querySelectorAll('noizu-sg-btn').forEach((el) => {
+        el.addEventListener('sg-click', () => {
+          // Host-owned: analytics / form submit. The island does not POST this.
+          console.log('sg-click');
+        });
+      });
+      document.querySelectorAll('noizu-sg-card').forEach((el) => {
+        el.addEventListener('sg-card-select', (event) => {
+          // Host-owned navigation. preventDefault to stop the inner <a>.
+          event.preventDefault();
+          console.log('sg-card-select', event.detail);
+        });
+      });
+      document.querySelectorAll('noizu-sg-input').forEach((el) => {
+        el.addEventListener('sg-input', (event) => {
+          // Host-owned persist / validate. The island does not POST this.
+          console.log('sg-input', event.detail);
+        });
+      });
+      const spec = document.querySelector('noizu-sg-spec-table');
+      if (spec) {
+        spec.rows = [
+          {key: 'Protocol', value: 'HTTPS'},
+          {key: 'Note', value: '<b>text only</b>'},
+        ];
+      }
+      const stepper = document.querySelector('noizu-sg-steps');
+      if (stepper) stepper.steps = ['Plan', 'Build', 'Ship'];
+    </script>
+  </body>
+</html>

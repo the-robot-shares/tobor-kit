@@ -1,0 +1,44 @@
+schema: '0.4'
+id: tobor-avatar-orbit
+type: image
+quality: medium
+service: gemini
+model: gemini-3.1-flash-image
+prompt:
+  text: |
+    Create a professional UI mascot sprite sheet, exactly FOUR equal columns and TWO equal rows.
+    Eight square cells in a strict regular grid, NO gutters, NO borders, NO captions, NO text.
+    Uniform solid very dark navy #101827 background across every cell. Render the SAME character
+    consistently in every cell. Each character centered in its cell, same scale, completely contained
+    with generous 15 percent padding so the cells can be cropped separately. Clean soft 3D toy render,
+    subtle ambient lighting, polished ceramic and rubber materials, high legibility at 80 pixel size.
+    ORBIT: a friendly cream ceramic spherical robot with a dark rounded visor, two bright teal circular eyes, small orange antenna, stubby floating mitten hands.
+    Top row, left to right: (1) IDLE: relaxed neutral happy eyes, hands down;
+    (2) LISTENING: attentively leaning with one hand cupped to ear and cyan sound arcs;
+    (3) THINKING: one hand to chin, thoughtful tilted gaze, three small glowing dots overhead;
+    (4) SPEAKING: expressive open mouth, one hand gesturing, small cyan speech wave near mouth.
+    Bottom row, left to right: (5) WORKING: actively holding small glowing orange wrench and gear;
+    (6) ERROR: apologetic worried eyes, small red warning triangle beside head;
+    (7) OFFLINE: eyes closed as two dim horizontal lines, slumped sleeping pose;
+    (8) CELEBRATING: delighted eyes, both hands raised with a few tiny confetti sparkles.
+    Every cell contains only the described one character and its little state props. No writing anywhere.
+  negative: captions, labels, letters, watermark, grid lines, inconsistent character, cropped limbs
+output:
+  formats:
+    - format: png
+  dimensions:
+    width: 2048
+    height: 1024
+    aspect_ratio: '2:1'
+eval:
+  pass_threshold: 0.75
+  criteria:
+    sprite_layout:
+      weight: 3
+      description: Exactly four columns and two rows of eight centered isolated equal-scale figures.
+      fail_signals: [cropped character, irregular grid, missing cell]
+    character_consistency:
+      weight: 3
+      description: Same distinctive robot in all cells with clearly distinct requested expressions.
+      fail_signals: [different robot, indistinguishable states, unreadable small silhouette]
+  reject_if: [text or watermarks, malformed extra limbs]

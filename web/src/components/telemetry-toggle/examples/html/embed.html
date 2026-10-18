@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>tobor-telemetry-toggle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- CDN build rewrites lit → relative vendor/; no import map required. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@noizu/tobor-kit/client.js": "https://cdn.derobot.is/tobor-kit/latest/client.js",
+          "@noizu/tobor-kit/telemetry-toggle.js": "https://cdn.derobot.is/tobor-kit/latest/components/telemetry-toggle/telemetry-toggle.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <tobor-telemetry-toggle></tobor-telemetry-toggle>
+    <script type="module">
+      import {ToborKitClient} from '@noizu/tobor-kit/client.js';
+      import '@noizu/tobor-kit/telemetry-toggle.js';
+      const el = document.querySelector('tobor-telemetry-toggle');
+      // Host-owned OIDC access token. Never a provider key or cookie.
+      el.client = new ToborKitClient({
+        baseUrl: '/api/tobor-kit',
+        token: () => sessionStorage.getItem('tobor-access-token'),
+      });
+      el.addEventListener('tobor-telemetry-change', (e) => {
+        // 403 revert: source forced → the element now renders nothing.
+        console.log('tobor-telemetry-change', e.detail.consent);
+      });
+    </script>
+  </body>
+</html>

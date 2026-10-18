@@ -1,0 +1,821 @@
+# @noizu/lit name directory — tags, existing styleguide classes, slots, data-cy, event names.
+# Not an API spec. No payloads. String attributes only.
+# Tracks may not invent tags or CSS classes not listed here.
+
+elements:
+  noizu-waitlist:
+    file: src/components/waitlist/noizu-waitlist.ts
+    attrs: [slug, service, list, api, source]
+    attr_aliases:
+      slug: [data-foryou-slug]
+      service: [data-foryou-service]
+      list: [data-foryou-list]
+      api: [data-foryou-api]
+      source: [data-foryou-source]
+    slots: [default]
+    classes:
+      - field-group
+      - field-label
+      - field-input
+      - field-select
+      - field-textarea
+      - btn
+      - success
+      - danger
+    cy_prefix: waitlist
+    cy:
+      - waitlist.form
+      - waitlist.email
+      - waitlist.submit
+      - waitlist.status
+    events: [waitlist-success, waitlist-error]
+    notes: >
+      Port foryou public/widget.js (GET list manifest, POST signups, honeypot
+      company_website, credentials omit, always-202). Default api
+      https://foryou.therobotlives.com. Fallback field = email when manifest
+      has no attributes. Light DOM. Host JWT/session is out of scope.
+
+  noizu-cookie-consent:
+    file: src/components/cookie/noizu-cookie-consent.ts
+    attrs: [storage-key, mode]
+    slots: []
+    classes:
+      - card
+      - btn
+      - btn-outline
+      - btn-sm
+      - hui
+      - checkbox-wrap
+    cy_prefix: cookie
+    cy:
+      - cookie.banner
+      - cookie.accept-all
+      - cookie.reject-optional
+      - cookie.save
+      - cookie.category
+    events: [cookie-consent-change]
+    event_aliases: [start-app:cookie-consent-change]
+    notes: >
+      Island: localStorage + window events. Default storage-key
+      start-app.cookie-consent.v1. mode=categories|essential-all.
+      Shape {version:1, categories:{necessary,analytics,marketing,preferences},
+      acceptedAt, updatedAt}. Host keeps Phoenix session, JWT PUT
+      /api/v1/consent/cookies, /session-cookie-required routing.
+      Listens for cookie-settings-open to re-open the panel.
+
+  noizu-cookie-settings:
+    file: src/components/cookie/noizu-cookie-settings.ts
+    attrs: []
+    slots: [default]
+    classes:
+      - btn
+      - btn-outline
+      - btn-sm
+    cy_prefix: cookie
+    cy:
+      - cookie.settings
+    events: [cookie-settings-open]
+    notes: >
+      Button. Click dispatches cookie-settings-open (bubbles, composed).
+      Default slot copy "Cookie Settings". No import of the banner.
+
+  noizu-faq:
+    file: src/components/faq/noizu-faq.ts
+    attrs: [mode]
+    slots: [default]
+    classes:
+      - hui
+      - disclosure
+      - disclosure-button
+      - disclosure-panel
+    cy_prefix: faq
+    cy:
+      - faq.list
+      - faq.item
+      - faq.trigger
+    events: [faq-toggle]
+    notes: >
+      Wrap slotted native <details>/<summary>. mode=many (default) or one
+      (accordion). Do not invent a JSON items attribute. Light DOM.
+
+  noizu-footer-brand:
+    file: src/components/footer-brand/noizu-footer-brand.ts
+    attrs: [href, target, brand, prefix, suffix, theme, palette, align]
+    slots: []
+    classes: []
+    cy_prefix: footer-brand
+    cy:
+      - footer-brand-root
+      - footer-brand-link
+    events: []
+    notes: >
+      Shadow DOM attribution line "A The Robot Lives Joint". Presentational
+      only — no events, no slots, no backend. theme=dark|light|auto (auto
+      follows prefers-color-scheme). palette=default|mono|accent (token
+      values only). Empty prefix/suffix suppresses that piece and its
+      spacing. Explicit --noizu-footer-brand-* overrides beat presets.
+
+  noizu-auth:
+    file: src/components/auth/noizu-auth.ts
+    attrs: [mode, flow, open, endpoint, transport, api-base, with-credentials, development, dev-port, invite-token-mode, invite-fallback-url, invite-required-url, custom-method]
+    slots: [avatar, brand, footer, trigger, method, method-login, method-signup, method-register]
+    classes: [custom-method, auth-content, auth-shell, auth-dialog, auth-card, auth-avatar, auth-brand, auth-title, auth-description, auth-methods, auth-provider, auth-form, field-group, field-label, field-input, btn, auth-status, auth-footer, auth-close, dropdown-wrap, dropdown-panel, auth-trigger, merge-required]
+    cy_prefix: auth
+    cy:
+      - auth-dropdown-trigger
+      - auth-dropdown-panel
+      - pipe-list
+      - pipe-email-password
+      - pipe-mobile-password
+      - pipe-email-otp
+      - pipe-mobile-otp
+      - pipe-google
+      - pipe-authentik
+      - pipe-github
+      - pipe-form
+      - pipe-submit
+      - mobile-phone-input
+      - merge-required
+      - merge-pipe-list
+      - merge-pipe-option
+      - merge-confirm
+      - merge-confirm-form
+      - merge-confirm-submit
+      - sms-region-notice
+      - custom-method
+      - invite_token-input
+      - invite-token-hint
+    events: [noizu-auth-flow-change, auth-success, auth-error, auth-close, auth-redirect, noizu-auth-submit, noizu-auth-success, noizu-auth-error, noizu-auth-merge-required, noizu-auth-merge-confirmed, noizu-auth-otp-requested, noizu-auth-sms-region-unsupported, noizu-auth-invite-required]
+    notes: >
+      `custom-method` (or pipes = ['custom']) renders host-slotted method-login /
+      method-signup / method panes inside the card chrome, makes no network
+      request, mounts no human-verify element, and is finished by the host via
+      complete(detail) / fail(error).
+      Standard portfolio authentication, configured methods and copy, same-host
+      WebSocket adapter; semantic Shadow DOM parts and theme tokens. Optional
+      `mode=dropdown` (anchored, non-modal popover; trigger slot) and a
+      data-driven `pipes` property (email_password, mobile_password,
+      email_otp, mobile_otp, google, authentik, github — reuses noizu-phone-input for
+      the mobile pipes) layer additively on top of the legacy options-driven
+      email flow, which is unchanged when `pipes` is unset. Merge-flow states
+      (`merge_required` / `merge_confirming`) surface only masked identifiers
+      for an account's existing pipes, per the backend contract. Optional
+      `smsRegions` property ({supported: string[], message?}) gates the mobile
+      pipes to SMS-capable regions (ISO-3166 alpha-2, derived from
+      noizu-phone-input's own country selection); absent = no gating. A
+      server `sms_region_unsupported` error always overrides the client-side
+      check. Two selectable transports behind one internal contract:
+      `transport` unset (default) keeps the same-host WebSocket at `endpoint`
+      exactly as before; `transport="rest"` speaks JSON `POST {api-base}/auth/*`
+      with Bearer-token sessions (409 merge_required and 422
+      sms_region_unsupported map onto the same internal states). REST mode omits
+      cookies unless `with-credentials` is set, and emits the session on
+      auth-success / noizu-auth-success — the element never stores tokens.
+      An explicit invite-token-mode="optional" opts into the invite
+      interstitial: a hint under the field, and a signup answered with
+      invite_required (error code, or user.invite_required on success) emits
+      the cancelable noizu-auth-invite-required and navigates to
+      invite-required-url (default /auth/invite-required; "" = off) instead
+      of rendering an error. The unset default is unchanged.
+
+  noizu-invite-gate:
+    file: src/components/invite-gate/noizu-invite-gate.ts
+    attrs: [endpoint, continue-url, profile-url, settings-url, sign-out-url, brand, email, token, with-credentials, embedded]
+    slots: [brand, footer]
+    classes: []
+    cy_prefix: invite
+    cy:
+      - invite-required
+      - invite-title
+      - invite-description
+      - invite-redeem-form
+      - invite-code-input
+      - invite-redeem-submit
+      - invite-error
+      - invite-status
+      - invite-profile-link
+      - invite-settings-link
+      - invite-sign-out
+    events: [noizu-invite-redeemed, noizu-invite-error, noizu-invite-sign-out]
+    notes: >
+      Invite interstitial card for an account held by the invite gate
+      (403 invite_required). POSTs {token} to a same-origin endpoint
+      (default /api/v1/invites/redeem; Bearer via the accessToken property,
+      or a host redeemer hook), then emits the cancelable
+      noizu-invite-redeemed and navigates to continue-url. Error states:
+      invalid, expired, used, rate_limited, unauthenticated, failure.
+      Sibling module invite-required.js (no element) holds the 403 helpers
+      handleInviteRequired / withInviteGate / userNeedsInvite.
+
+  tobor-voice-agent:
+    file: src/components/voice-agent/voice-agent.ts
+    attrs: [organization, project, backend-url, backend, engine, model, voice, system-prompt, avatar-group, label]
+    slots: [footer]
+    cy_prefix: agent
+    events: [tobor-agent-ready, tobor-agent-transcript, tobor-agent-state, tobor-agent-error, tobor-agent-event]
+    notes: Multimodal WebSocket agent with explicit engine, transcript, interruption and avatar state.
+
+  tobor-guide-panel:
+    file: src/components/guide-panel/guide-panel.ts
+    attrs: [base-url, token, placement, start-expanded]
+    slots: []
+    cy_prefix: guide
+    events: [tobor-task-invoked, tobor-turn-submitted, tobor-state-change, tobor-turn-error, tobor-turn-message]
+    notes: >
+      Orchestrator. Object properties `guide` and `client` are JS-only.
+      One of client/base-url required in practice.
+
+  tobor-robot-avatar:
+    file: src/components/robot-avatar/robot-avatar.ts
+    attrs: [state, renderer, asset, reduced-motion, label]
+    slots: []
+    cy_prefix: robot
+    events: []
+    notes: Pure state machine over idle/listening/thinking/speaking/tool_running/error/offline.
+
+  tobor-mode-toggle:
+    file: src/components/mode-toggle/mode-toggle.ts
+    attrs: [mode, disabled]
+    slots: []
+    cy_prefix: mode
+    events: [tobor-mode-change]
+    notes: Object property `modes` is JS-only.
+
+  tobor-voice-session:
+    file: src/components/voice-session/voice-session.ts
+    attrs: [push-to-talk]
+    slots: []
+    cy_prefix: voice
+    events: [tobor-voice-state, tobor-voice-transcript, tobor-voice-error]
+    notes: Object properties `client`, `voice`, `adapterFactory` are JS-only.
+
+  tobor-transcript-view:
+    file: src/components/transcript-view/transcript-view.ts
+    attrs: [pending]
+    slots: []
+    cy_prefix: transcript
+    events: [tobor-transcript-clear]
+    notes: Object properties `turns`, `load`, `store` are JS-only.
+
+  tobor-task-menu:
+    file: src/components/task-menu/task-menu.ts
+    attrs: [open]
+    slots: []
+    cy_prefix: task
+    events: [tobor-task-select]
+    notes: Object property `inventory` is JS-only.
+
+  tobor-tool-list:
+    file: src/components/tool-list/tool-list.ts
+    attrs: [show-descriptions]
+    slots: []
+    cy_prefix: tools
+    events: [tobor-tool-select]
+    notes: Object property `inventory` is JS-only.
+
+  tobor-login-flow:
+    file: src/components/login-flow/login-flow.ts
+    attrs: [callback-search, auto-redirect]
+    slots: []
+    cy_prefix: login
+    events: [tobor-auth-redirect, tobor-auth-token, tobor-auth-error]
+    notes: Object property `auth` (GuideAuth) is JS-only and required.
+
+  tobor-telemetry-toggle:
+    file: src/components/telemetry-toggle/telemetry-toggle.ts
+    attrs: []
+    slots: []
+    cy_prefix: telemetry
+    events: [tobor-telemetry-change]
+    notes: Object properties `client` and `consent` are JS-only; one required.
+
+  tobor-chat-thread:
+    file: src/components/chat-thread/chat-thread.ts
+    attrs: [pending, show-composer]
+    slots: []
+    cy_prefix: thread
+    cy:
+      - thread.root
+      - thread.composer
+      - thread.send
+    events: [tobor-transcript-clear, thread-send]
+    notes: >
+      Composes tobor-transcript-view. Object properties turns, messages,
+      participants, load, store are JS-only.
+
+  tobor-configurator:
+    file: src/components/configurator/tobor-configurator.ts
+    attrs: [schema-src]
+    slots: [default]
+    cy_prefix: configurator
+    cy:
+      - configurator.form
+      - configurator.preview
+      - configurator.snippet
+      - configurator.apply
+      - configurator.field
+    events: [configurator-change, configurator-apply]
+    notes: >
+      Schema-driven playground form. Object property `schema` is JS-only.
+      Also reads child script[type=application/json] or fetches schema-src.
+
+  noizu-phone-input:
+    file: src/components/phone-input/noizu-phone-input.ts
+    attrs: [country, mobile-only, name, disabled, value, described-by]
+    slots: []
+    classes: []
+    cy_prefix: phone
+    cy:
+      - phone.input
+      - phone.country
+      - phone.dial
+    events: [country-change, phone-change, phone-invalid]
+    notes: >
+      Shadow DOM phone field. country is ISO-3166 alpha-2 (default US).
+      value is in-kit E.164; no libphonenumber-js. Host validates uniqueness/OTP.
+
+  noizu-model-config:
+    file: src/components/model-config/noizu-model-config.ts
+    attrs: [catalog-url, value, inherit, allow-custom, allow-budget, budget]
+    slots: []
+    classes: []
+    cy_prefix: model
+    cy:
+      - model.picker
+      - model.custom
+      - model.budget
+      - model.save
+    events: [model-change, custom-endpoint-save, budget-change]
+    notes: >
+      catalog is property-only. value is provider:model. Host persists.
+      Empty apiKey on custom-endpoint-save means keep stored.
+
+  noizu-subscription-gate:
+    file: src/components/subscription-gate/noizu-subscription-gate.ts
+    attrs: [entitled, check-url, redirect-to, auto-redirect]
+    slots: [default]
+    classes: []
+    cy_prefix: gate
+    cy:
+      - gate.root
+      - gate.blocked
+      - gate.link
+    events: [gate-blocked]
+    notes: >
+      Host owns entitlement truth. Optional GET check-url.
+      gate-blocked is cancelable; auto-redirect default false.
+
+  noizu-human-verify:
+    file: src/components/human-verify/noizu-human-verify.ts
+    attrs: [provider, site-key, action]
+    slots: []
+    classes: []
+    cy_prefix: verify
+    cy:
+      - verify.root
+      - verify.widget
+    events: [verified]
+    notes: >
+      provider=turnstile|recaptcha-v3|none. site-key is PUBLIC only.
+      Host MUST siteverify; kit never treats verified as proof.
+
+  noizu-plan-compare:
+    file: src/components/plan-compare/noizu-plan-compare.ts
+    attrs: [layout, billing-toggle, checkout-url-template]
+    slots: []
+    classes: []
+    cy_prefix: plan
+    cy:
+      - plan.compare
+      - plan.card
+      - plan.toggle
+      - plan.cta
+    events: [plan-select]
+    notes: >
+      Data-driven pricing comparison. Property `plans` or child
+      script application/json. layout=cards|table. Host owns Stripe
+      Payment Links. No in-kit checkout.
+
+  noizu-billing-status:
+    file: src/components/billing-status/noizu-billing-status.ts
+    attrs: []
+    slots: []
+    classes: []
+    cy_prefix: billing
+    cy:
+      - billing.status
+      - billing.plan
+      - billing.portal
+    events: [portal-open]
+    notes: >
+      Shadow DOM status row. Object property `subscription` is JS-only.
+      Host supplies snapshot; portal-open is host-owned Stripe customer portal.
+      No Stripe in the element.
+
+  tobor-persona-card:
+    file: src/components/persona/persona-card.ts
+    attrs: [persona-id, display-name, handle]
+    slots: [avatar, badges, actions]
+    classes: []
+    cy_prefix: persona
+    cy:
+      - persona.card
+    events: [persona-select]
+    notes: >
+      Extends tobor-party-card. Host projects identity. Select emits
+      persona-select {personaId}. No navigation. Presence is inherited.
+
+  tobor-persona-picker:
+    file: src/components/persona/persona-picker.ts
+    attrs: [query]
+    slots: []
+    classes: []
+    cy_prefix: persona
+    cy:
+      - persona.picker
+      - persona.search
+      - persona.item
+    events: [persona-select]
+    notes: >
+      Searchable grid. Object property personas {id, name, handle?}[] is
+      JS-only. Host supplies the list. query filters id/name/handle.
+
+  tobor-party-card:
+    file: src/components/party-card/party-card.ts
+    attrs: [display-name, handle, presence]
+    slots: [avatar, badges, actions]
+    cy_prefix: party
+    cy:
+      - party.card
+      - party.name
+      - party.handle
+      - party.presence
+    events: []
+    notes: Base party identity card. Avatar slot supports tobor-robot-avatar.
+
+  tobor-agent-card:
+    file: src/components/party-card/agent-card.ts
+    attrs: [display-name, handle, presence, agent-id, model-badge, show-capabilities]
+    slots: [avatar, badges, actions]
+    cy_prefix: agent
+    cy:
+      - agent.card
+      - agent.chat
+      - agent.caps
+    events: [agent-chat]
+    notes: Extends party-card. capabilities is JS string[]. Chat CTA is an event.
+
+  tobor-user-card:
+    file: src/components/party-card/user-card.ts
+    attrs: [display-name, handle, presence, user-id, role, org]
+    slots: [avatar, badges, actions]
+    cy_prefix: user
+    cy:
+      - user.card
+      - user.profile
+    events: [user-profile]
+    notes: Extends party-card. Profile CTA is an event.
+
+  noizu-sg-btn:
+    file: src/components/styleguide/noizu-sg-btn.ts
+    attrs: [variant, size, disabled, type]
+    slots: [default]
+    cy_prefix: sg
+    cy: [sg.btn]
+    events: [sg-click]
+    notes: StyleGuideBtn port. variant primary|secondary|ghost|danger.
+
+  noizu-sg-card:
+    file: src/components/styleguide/noizu-sg-card.ts
+    attrs: [href]
+    slots: [header, default, footer]
+    cy_prefix: sg
+    cy: [sg.card]
+    events: [sg-card-select]
+    notes: StyleGuideCard port. href optional; host owns navigation.
+
+  noizu-sg-card-grid:
+    file: src/components/styleguide/noizu-sg-card-grid.ts
+    attrs: [columns]
+    slots: [default]
+    cy_prefix: sg
+    cy: [sg.grid]
+    events: []
+    notes: StyleGuideCardGrid port. columns default 3.
+
+  noizu-sg-status:
+    file: src/components/styleguide/noizu-sg-status.ts
+    attrs: [status, label, description]
+    cy_prefix: sg
+    cy: [sg.status]
+    events: []
+    notes: StyleGuideStatusIndicator port. status ok|warn|error|idle.
+
+  noizu-sg-select:
+    file: src/components/styleguide/noizu-sg-select.ts
+    attrs: [label, name, value, options, placeholder, disabled, required, error, help-text, error-message]
+    cy_prefix: sg
+    cy: [sg.select]
+    events: [sg-change, change]
+    notes: Native accessible single-select. Host-managed forms; options array or JSON attribute.
+  noizu-sg-input:
+    file: src/components/styleguide/noizu-sg-input.ts
+    attrs: [name, type, disabled, error, value, label, placeholder, required, help-text, error-message]
+    cy_prefix: sg
+    cy: [sg.input]
+    events: [sg-input, change]
+    notes: StyleGuideInputField port. type=textarea renders textarea.
+
+  noizu-sg-spec-table:
+    file: src/components/styleguide/noizu-sg-spec-table.ts
+    attrs: []
+    cy_prefix: sg
+    cy: [sg.spec]
+    events: []
+    notes: rows {key, value}[] JS-only. Text cells only.
+
+  noizu-sg-steps:
+    file: src/components/styleguide/noizu-sg-steps.ts
+    attrs: [current]
+    cy_prefix: sg
+    cy: [sg.steps]
+    events: []
+    notes: steps string[] JS-only. current is 0-based index.
+
+  tobor-asset-view:
+    file: src/components/asset/asset-view.ts
+    attrs: []
+    cy_prefix: asset
+    cy: [asset.view, asset.preview]
+    events: [asset-open]
+    notes: Mime-aware preview. asset property JS-only. No unsafeHTML.
+
+  tobor-asset-editor:
+    file: src/components/asset/asset-editor.ts
+    attrs: []
+    cy_prefix: asset
+    cy: [asset.editor, asset.save]
+    events: [asset-save]
+    notes: Name + text body. Host persists.
+
+  tobor-artifact-view:
+    file: src/components/artifact/tobor-artifact-view.ts
+    attrs: []
+    cy_prefix: artifact
+    cy: [artifact.view, artifact.review]
+    events: [review-start]
+    notes: Body as pre. review-start {artifactId, version}.
+
+  tobor-artifact-editor:
+    file: src/components/artifact/tobor-artifact-editor.ts
+    attrs: []
+    cy_prefix: artifact
+    cy: [artifact.editor, artifact.save]
+    events: [artifact-save]
+    notes: Title + body. Host persists.
+
+  tobor-review-panel:
+    file: src/components/review-panel/review-panel.ts
+    attrs: [artifact-id, show-composer]
+    cy_prefix: review
+    cy: [review.panel, review.item, review.composer, review.submit]
+    events: [review-submit, review-resolve]
+    notes: reviews property JS-only. Host loads/saves.
+
+  tobor-wiki-space:
+    file: src/components/wiki/tobor-wiki-space.ts
+    attrs: [selected-id]
+    cy_prefix: wiki
+    cy: [wiki.space, wiki.space-item]
+    events: [wiki-space-select]
+    notes: spaces property JS-only.
+
+  tobor-wiki-entry:
+    file: src/components/wiki/tobor-wiki-entry.ts
+    attrs: []
+    cy_prefix: wiki
+    cy: [wiki.entry]
+    events: [wiki-edit]
+    notes: Body in pre. Never unsafeHTML.
+
+  tobor-mcp-domain:
+    file: src/components/mcp-domain/tobor-mcp-domain.ts
+    attrs: []
+    cy_prefix: mcp
+    cy: [mcp.domain, mcp.tool]
+    events: [tool-visibility-change]
+    notes: tools {name, visibility}[] JS-only. Host persists.
+
+  tobor-mcp-config:
+    file: src/components/mcp-config/tobor-mcp-config.ts
+    attrs: [url, transport]
+    cy_prefix: mcp
+    cy: [mcp.config, mcp.save]
+    events: [config-change]
+    notes: transport=stdio|http|sse. extras JS-only. No secrets on the tag.
+
+  tobor-mcp-clients:
+    file: src/components/mcp-clients/tobor-mcp-clients.ts
+    attrs: []
+    cy_prefix: mcp
+    cy: [mcp.clients, mcp.authorize, mcp.revoke]
+    events: [client-authorize, client-revoke]
+    notes: clients JS-only. OAuth redirect is host-owned.
+
+  tobor-prompt-library:
+    file: src/components/prompt/tobor-prompt-library.ts
+    attrs: [query, selected-id]
+    slots: []
+    cy_prefix: prompt
+    cy: [prompt.library, prompt.item, prompt.star]
+    events: [prompt-select, prompt-star]
+    notes: prompts {id, title, body, starred?}[] is JS-only. Host persists stars.
+
+  tobor-prompt-history:
+    file: src/components/prompt/tobor-prompt-history.ts
+    attrs: []
+    slots: [diff]
+    cy_prefix: prompt
+    cy: [prompt.history, prompt.fork, prompt.star]
+    events: [prompt-fork, prompt-star]
+    notes: entries JS-only. Host persists forks/stars. No unsafeHTML.
+
+  tobor-npl-view:
+    file: src/components/npl-view/npl-view.ts
+    attrs: [source]
+    slots: []
+    classes: []
+    cy_prefix: npl
+    cy:
+      - npl.view
+      - npl.copy
+      - npl.fold
+    events: [npl-copy]
+    notes: >
+      Foldable NPL viewer. Highlight on escaped spans; never unsafeHTML.
+      Copy emits npl-copy {text}.
+
+  tobor-wiki-entry-editor:
+    file: src/components/wiki/tobor-wiki-entry-editor.ts
+    attrs: []
+    cy_prefix: wiki
+    cy: [wiki.editor, wiki.save]
+    events: [wiki-save]
+    notes: Host persists wiki-save.
+
+  noizu-page-comments:
+    file: src/components/page-comments/page-comments.ts
+    attrs: [site, api-base, enabled, rail-mode, page-key-strategy]
+    slots: []
+    classes: []
+    cy_prefix: comments
+    cy:
+      - comments.launcher
+      - comments.rail
+      - comments.cards
+      - comments.card
+      - comments.card-body
+      - comments.orphan-section
+      - comments.composer-card
+      - comments.composer
+      - comments.composer-send
+      - comments.composer-cancel
+      - comments.reply
+      - comments.reply-field
+      - comments.reply-send
+      - comments.edit
+      - comments.edit-field
+      - comments.edit-save
+      - comments.delete
+      - comments.resolve
+      - comments.reopen
+      - comments.resolved-badge
+      - comments.sign-in
+      - comments.sign-out
+      - comments.close
+      - comments.empty
+      - comments.ring
+      - comments.picker-outline
+      - comments.attach
+      - comments.screenshot
+      - comments.screen-capture
+      - comments.file-input
+      - comments.pending-chips
+      - comments.pending-chip
+      - comments.pending-remove
+      - comments.notice
+      - comments.attachments
+      - comments.attachment-image
+      - comments.attachment-file
+      - comments.annotation-edit
+      - comments.reply-chips
+      - comments.snip-modal
+      - comments.snip-cancel
+      - comments.snip-apply
+      - comments.snip-recrop
+      - comments.snip-save
+      - comments.crop-rect
+      - comments.crop-handle
+      - comments.tool-rect
+      - comments.tool-arrow
+      - comments.tool-pen
+      - comments.tool-text
+      - comments.tool-pixelate
+      - comments.color
+      - comments.stroke
+      - comments.undo
+      - comments.redo
+      - comments.clear
+      - comments.annotate-canvas
+      - comments.text-input
+      - comments.lightbox
+      - comments.lightbox-download
+      - comments.lightbox-close
+      - comments.tab-open
+      - comments.tab-resolved
+      - comments.tab-all
+      - comments.new-pill
+      - comments.unread-dot
+      - comments.selection-pill
+    events:
+      [
+        page-comments-toggle,
+        page-comments-page-change,
+        page-comments-thread-create,
+        page-comments-thread-orphan,
+        page-comments-auth-change,
+        page-comments-realtime,
+      ]
+    notes: >
+      Page annotation island. dataSource (HttpDataSource/MemoryDataSource) is
+      JS-only. All UI lives in shadow layers appended to document.body
+      (noizu-page-comments-rail / -overlay, below); push rail-mode margin-Rights
+      <html> while enabled. Markdown bodies are escape-first sanitized
+      (markdown.ts), rendered via unsafeHTML on that output only.
+
+  noizu-page-comments-rail:
+    file: src/components/page-comments/page-comments.ts
+    attrs: []
+    slots: []
+    cy_prefix: comments
+    cy: [comments.launcher, comments.rail]
+    events: []
+    notes: >
+      Internal layer tag, auto-appended by noizu-page-comments. Not for direct
+      host use; ships in the same module and registers for the CDN gate.
+
+  noizu-page-comments-overlay:
+    file: src/components/page-comments/page-comments.ts
+    attrs: []
+    slots: []
+    cy_prefix: comments
+    cy: [comments.ring, comments.picker-outline, comments.selection-pill]
+    events: []
+    notes: >
+      Internal pointer-transparent overlay layer (picker highlight, anchor
+      rings, floating selection pill), auto-appended by noizu-page-comments.
+      Not for direct host use.
+
+  noizu-page-comments-lightbox:
+    file: src/components/page-comments/lightbox.ts
+    attrs: []
+    slots: []
+    cy_prefix: comments
+    cy: [comments.lightbox, comments.lightbox-download, comments.lightbox-close]
+    events: []
+    notes: >
+      Internal image viewer layer (attachment preview + download), auto-appended
+      by noizu-page-comments on demand. Esc / scrim / ✕ close it.
+
+  noizu-page-comments-snip:
+    file: src/components/page-comments/snip.ts
+    attrs: []
+    slots: []
+    cy_prefix: comments
+    cy:
+      [
+        comments.snip-modal,
+        comments.snip-cancel,
+        comments.snip-apply,
+        comments.snip-recrop,
+        comments.snip-save,
+        comments.crop-rect,
+        comments.crop-handle,
+        comments.tool-rect,
+        comments.tool-arrow,
+        comments.tool-pen,
+        comments.tool-text,
+        comments.tool-pixelate,
+        comments.color,
+        comments.stroke,
+        comments.undo,
+        comments.redo,
+        comments.clear,
+        comments.annotate-canvas,
+        comments.text-input,
+      ]
+    events: []
+    notes: >
+      Internal screenshot crop/annotate modal, auto-appended by
+      noizu-page-comments on demand; emits pc-snip-save {canvas, width, height,
+      annotation} for the controller to upload via presign/complete.

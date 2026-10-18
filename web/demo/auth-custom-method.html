@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>noizu-auth — custom method</title>
+    <style>
+      body { margin: 0; font-family: system-ui, sans-serif; background: #f5f6f8; color: #20232c; }
+      main { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1rem; }
+      pre { background: #fff; border: 1px solid #dddfe5; border-radius: .5rem; padding: .75rem; font-size: .8rem; overflow: auto; }
+      .pane p { margin: 0 0 .75rem; font-size: .9rem; color: #606575; }
+      .pane button { width: 100%; min-height: 2.75rem; border-radius: .75rem; border: 0; background: #3759bb; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+      .pane .alt { background: none; color: #3759bb; margin-top: .5rem; min-height: 0; font-weight: 500; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>noizu-auth — custom method</h1>
+      <p>
+        <code>custom-method</code> keeps the kit's card, dialog, focus handling and events, and renders only the
+        host's slotted method content. The element makes no network request. The host finishes the flow with
+        <code>complete(detail)</code> or <code>fail(error)</code>. The sign-in here is a stand-in for a real
+        key signature.
+      </p>
+      <button id="open" type="button">log in</button>
+      <noizu-auth id="auth" mode="modal" custom-method>
+        <strong slot="brand">therobot.institute</strong>
+        <div slot="method-login" class="pane">
+          <p>Sign a one-time challenge with the key stored on this device.</p>
+          <button type="button" data-action="sign">sign with key</button>
+          <button type="button" class="alt" data-action="fail">simulate a bad signature</button>
+        </div>
+        <div slot="method-register" class="pane">
+          <p>Generate a key on this device. Nothing about you leaves the browser except the public half.</p>
+          <button type="button" data-action="generate">generate a key</button>
+          <button type="button" class="alt" data-flow="login">already have a key? log in</button>
+        </div>
+      </noizu-auth>
+      <h2>events</h2>
+      <pre id="log"></pre>
+    </main>
+    <script type="module">
+      import '../src/components/auth/noizu-auth.ts';
+      const auth = document.getElementById('auth');
+      const log = (line) => { document.getElementById('log').textContent += line + '\n'; };
+      auth.text = {loginTitle: 'sign in with your key', signupTitle: 'join the institute'};
+      document.getElementById('open').addEventListener('click', () => { auth.flow = 'login'; auth.open = true; });
+      for (const name of ['auth-success', 'auth-error', 'auth-close', 'noizu-auth-flow-change']) {
+        auth.addEventListener(name, (event) => log(`${name} ${JSON.stringify(event.detail)}`));
+      }
+      auth.addEventListener('click', (event) => {
+        const target = event.target.closest('button');
+        if (!target || target.closest('noizu-auth') !== auth) return;
+        if (target.dataset.flow) {
+          // Any slotted control can switch panes by dispatching this event.
+          target.dispatchEvent(new CustomEvent('auth-flow-switch', {detail: {flow: target.dataset.flow}, bubbles: true, composed: true}));
+        } else if (target.dataset.action === 'sign' || target.dataset.action === 'generate') {
+          // A real host signs a server challenge here and verifies it server-side before completing.
+          auth.complete({entityId: 'demo-entity', publicKey: 'ed25519:demo'});
+        } else if (target.dataset.action === 'fail') {
+          auth.fail({message: 'That signature did not verify.', code: 'bad_signature'});
+        }
+      });
+    </script>
+  </body>
+</html>

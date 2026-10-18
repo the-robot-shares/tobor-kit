@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tobor-artifact-view / tobor-artifact-editor</title>
+    <!-- CDN latest rewrites Lit to vendor/ — no import map required. -->
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/artifact/tobor-artifact-view.js"></script>
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/artifact/tobor-artifact-editor.js"></script>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 40rem;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        background: #12131a;
+        color: #e8e9f0;
+      }
+    </style>
+  </head>
+  <body>
+    <tobor-artifact-view id="view"></tobor-artifact-view>
+    <tobor-artifact-editor id="editor"></tobor-artifact-editor>
+    <pre id="log"></pre>
+    <script type="module">
+      const artifact = {
+        id: 'demo',
+        title: 'Release notes',
+        version: 1,
+        body: 'Ship the island.\nDo not render HTML.',
+        mime: 'text/plain',
+      };
+      const view = document.querySelector('#view');
+      const editor = document.querySelector('#editor');
+      const log = document.querySelector('#log');
+      view.artifact = artifact;
+      editor.artifact = artifact;
+      view.addEventListener('review-start', (event) => {
+        log.textContent = JSON.stringify({review: event.detail});
+        // Host-owned review flow. Ignore if this file is opened without a server.
+        fetch('/reviews', {
+          method: 'POST',
+          headers: {'content-type': 'application/json'},
+          body: JSON.stringify(event.detail),
+        }).catch(() => {});
+      });
+      editor.addEventListener('artifact-save', (event) => {
+        log.textContent = JSON.stringify({save: event.detail});
+        // Host-owned persistence. Kit does not write.
+        fetch(`/artifacts/${encodeURIComponent(event.detail.id || 'demo')}`, {
+          method: 'PUT',
+          headers: {'content-type': 'application/json'},
+          body: JSON.stringify(event.detail),
+        }).catch(() => {});
+      });
+    </script>
+  </body>
+</html>

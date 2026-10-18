@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Tobor voice agent playground</title>
+<style>body{margin:0;background:#080e19;color:#edf2ff;font:16px system-ui}main{max-width:900px;margin:36px auto;padding:24px}h1{font-size:32px}p{color:#adc0d7}details{margin:20px 0;padding:16px;background:#152033;border-radius:12px}form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;padding-top:16px}label{display:grid;gap:4px}input,select,button{font:inherit;padding:8px;background:#243249;color:#fff;border:1px solid #59677c;border-radius:6px}button{cursor:pointer}.notice{border-left:3px solid #5eead4;padding-left:12px}a{color:#83ddeb}</style>
+<script type="importmap">{"imports":{"lit":"/vendor/lit.js","lit/decorators.js":"/vendor/lit-decorators.js"}}</script></head>
+<body><main><h1>Voice agent playground</h1><p>Text, voice, images and screen sharing with an expressive companion.</p>
+<p class="notice" id="mode">Local test mode: responses come from a deterministic fixture. This does not exercise a paid voice provider.</p>
+<details><summary>Connection settings</summary><form id="settings">
+<label>Mode<select name="mode"><option value="fixture">Local test fixture</option><option value="live">Live provider gateway</option></select></label>
+<label>Backend URL<input name="backendUrl" value="http://127.0.0.1:8081"></label>
+<label>Organization<input name="organization" value="noizu-labs"></label><label>Project<input name="project" value="noizu-infra"></label>
+<label>Backend<input name="backend" value="litellm"></label>
+<label>Engine<select name="engine"><option value="tts">TTS</option><option value="openai-realtime">OpenAI Realtime</option><option value="elevenlabs">ElevenLabs</option></select></label>
+<label>Model<input name="model" value="fixture-model"></label><button type="submit">Apply settings</button></form></details>
+<tobor-voice-agent></tobor-voice-agent>
+</main><script type="module">
+import {createAvatarGroups} from '/components/voice-agent/voice-agent.js';
+const agent=document.querySelector('tobor-voice-agent');
+Object.assign(agent,{organization:'noizu-labs',project:'noizu-infra',backendUrl:'http://127.0.0.1:8081',backend:'litellm',engine:'tts',model:'fixture-model',tools:['fixture.echo'],mcpTools:[],systemPrompt:'You are a helpful voice assistant in the toolkit playground.',avatarGroups:createAvatarGroups(location.origin+'/'),avatarGroup:'orbit'});
+document.querySelector('#settings').addEventListener('submit',event=>{event.preventDefault();const values=Object.fromEntries(new FormData(event.target));const {mode,...config}=values;agent.disconnect();Object.assign(agent,config,{tools:mode==='fixture'?['fixture.echo']:[]});document.querySelector('#mode').textContent=mode==='fixture'?'Local test mode: responses come from a deterministic fixture. This does not exercise a paid voice provider.':'Live gateway selected. Configure server-side credentials and policy before connecting.';});
+</script></body></html>

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tobor-transcript-view</title>
+    <!-- CDN builds rewrite lit to vendor/; this map is for hosts that load the npm ES modules. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "lit": "https://cdn.derobot.is/tobor-kit/latest/vendor/lit.js",
+          "lit/decorators.js": "https://cdn.derobot.is/tobor-kit/latest/vendor/lit-decorators.js"
+        }
+      }
+    </script>
+    <style>
+      tobor-transcript-view {
+        --tobor-kit-transcript-height: 360px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="demo-frame">
+      <tobor-transcript-view></tobor-transcript-view>
+    </div>
+    <script type="module">
+      import {ToborKitClient} from 'https://cdn.derobot.is/tobor-kit/latest/client.js';
+      import {
+        createBackendStore,
+        createMemoryStore,
+      } from 'https://cdn.derobot.is/tobor-kit/latest/components/transcript-view/transcript-store.js';
+      import 'https://cdn.derobot.is/tobor-kit/latest/components/transcript-view/transcript-view.js';
+
+      const el = document.querySelector('tobor-transcript-view');
+      const sessionId = new URLSearchParams(location.search).get('session');
+      // Host-owned bearer thunk — never bake a secret into markup.
+      const token = () => window.__TOBOR_ACCESS_TOKEN;
+
+      el.addEventListener('tobor-transcript-clear', () => {
+        el.turns = [];
+        el.load = null;
+      });
+
+      if (sessionId) {
+        const store = createBackendStore(new ToborKitClient({baseUrl: '/api/tobor-kit', token}), sessionId);
+        const load = await store.load(); // GET …/transcript; 501 → not_server_backed
+        el.store = store;
+        el.load = load;
+        if (load.status === 'ok') el.turns = load.turns;
+      } else {
+        const store = createMemoryStore();
+        el.store = store;
+        el.turns = (await store.load()).turns;
+      }
+    </script>
+  </body>
+</html>

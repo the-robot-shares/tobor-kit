@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>@noizu/tobor-kit islands demo</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+      section { margin: 2rem 0; }
+      /* Fallback if host styleguide CSS is not loaded — demo only, not component CSS. */
+      .btn { padding: 0.4rem 0.8rem; cursor: pointer; }
+      .btn-outline { background: transparent; }
+      .field-group { display: grid; gap: 0.25rem; margin: 0.5rem 0; }
+      .field-input, .field-select, .field-textarea { padding: 0.4rem; }
+      .card { border: 1px solid #ccc; padding: 1rem; }
+      .success { color: #0a0; }
+      .danger { color: #c00; }
+    </style>
+  </head>
+  <body>
+    <h1>@noizu/tobor-kit islands</h1>
+    <p>Portfolio islands from the same package as the guide panel. Names: <code>registry.yaml</code>.</p>
+
+    <section>
+      <h2>waitlist</h2>
+      <noizu-waitlist slug="demo-waitlist" api="" source="demo"></noizu-waitlist>
+    </section>
+
+    <section>
+      <h2>cookie</h2>
+      <noizu-cookie-settings></noizu-cookie-settings>
+      <noizu-cookie-consent storage-key="noizu-lit-demo.cookie.v1" mode="categories"></noizu-cookie-consent>
+    </section>
+
+    <section>
+      <h2>faq</h2>
+      <noizu-faq mode="one">
+        <details>
+          <summary>What is this?</summary>
+          <p>A Lit island kit keyed to registry.yaml.</p>
+        </details>
+        <details>
+          <summary>Does the host need React?</summary>
+          <p>No. Tags work in HTML, Hologram, and Next.</p>
+        </details>
+        <details>
+          <summary>Where do styles come from?</summary>
+          <p>Existing <code>.btn</code> / <code>.field-*</code> / <code>.hui</code> classes.</p>
+        </details>
+      </noizu-faq>
+    </section>
+
+    <script type="module">
+      import '../src/components/waitlist/noizu-waitlist.ts';
+      import '../src/components/cookie/noizu-cookie-consent.ts';
+      import '../src/components/cookie/noizu-cookie-settings.ts';
+      import '../src/components/faq/noizu-faq.ts';
+    </script>
+  </body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>noizu-page-comments — MemoryDataSource demo</title>
+    <!-- CDN builds rewrite lit to vendor/; this map is for hosts that load the npm ES modules. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "lit": "https://cdn.derobot.is/tobor-kit/latest/vendor/lit.js",
+          "lit/decorators.js": "https://cdn.derobot.is/tobor-kit/latest/vendor/lit-decorators.js"
+        }
+      }
+    </script>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 46rem; margin: 2rem auto; padding: 0 1rem; }
+    </style>
+  </head>
+  <body>
+    <h1 id="title">Annotatable demo page</h1>
+    <p id="intro">
+      Enable comments with the launcher (bottom right) or Alt+C, then click any
+      element — or select text first — to anchor a thread.
+    </p>
+    <article id="doc">
+      <h2>Dynamic content</h2>
+      <p class="para">Paragraph one is anchored by a seeded thread.</p>
+      <div id="more"></div>
+    </article>
+    <button id="add" type="button">Append a paragraph</button>
+
+    <script type="module">
+      import 'https://cdn.derobot.is/tobor-kit/latest/components/page-comments/page-comments.js';
+      import {MemoryDataSource} from 'https://cdn.derobot.is/tobor-kit/latest/components/page-comments/page-comments.js';
+
+      const el = document.querySelector('noizu-page-comments');
+
+      // No backend in this demo: seed one thread anchored to paragraph one.
+      const source = new MemoryDataSource([
+        {
+          id: 'demo-1',
+          page_key: location.origin + location.pathname,
+          url: location.href,
+          title: document.title,
+          body_md: 'Seeded on **paragraph one**. Edit the page and watch it re-anchor.',
+          resolved: false,
+          author: 'demo',
+          comments: [],
+          anchor: {
+            css: '#doc > p.para',
+            xpath: '/html[1]/body[1]/article[1]/p[1]',
+            textQuote: {prefix: '', exact: 'Paragraph one is anchored', suffix: 'by a seeded thread'},
+            fingerprint: {tag: 'p', textHash: 'seed', relPos: 0},
+          },
+        },
+      ]);
+      el.site = 'demo-site';
+      el.dataSource = source;
+      el.addEventListener('page-comments-thread-create', (event) => console.info('created', event.detail.id));
+      el.addEventListener('page-comments-thread-orphan', (event) => console.info('orphaned', event.detail.id));
+
+      // Dynamic content: new paragraphs shift anchors; the anchor engine re-finds them.
+      let n = 0;
+      document.getElementById('add').addEventListener('click', () => {
+        n += 1;
+        const p = document.createElement('p');
+        p.className = 'para';
+        p.textContent = `Appended paragraph ${n} — the rail re-lays-out around it.`;
+        document.getElementById('more').append(p);
+      });
+    </script>
+  </body>
+</html>

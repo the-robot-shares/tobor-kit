@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>noizu-cookie-consent / noizu-cookie-settings</title>
+    <!-- CDN latest rewrites Lit to vendor/ — no import map required. -->
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/cookie/noizu-cookie-consent.js"></script>
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/cookie/noizu-cookie-settings.js"></script>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+      .card { border: 1px solid #ccc; padding: 1rem; }
+      .btn { padding: 0.4rem 0.8rem; cursor: pointer; }
+      .btn-outline { background: transparent; }
+      .btn-sm { font-size: 0.875rem; }
+      .checkbox-wrap { display: flex; gap: 0.5rem; align-items: center; margin: 0.35rem 0; }
+    </style>
+  </head>
+  <body>
+    <noizu-cookie-settings>Cookie Settings</noizu-cookie-settings>
+    <noizu-cookie-consent storage-key="start-app.cookie-consent.v1" mode="categories"></noizu-cookie-consent>
+    <script type="module">
+      const consent = document.querySelector('noizu-cookie-consent');
+      consent.addEventListener('cookie-consent-change', (event) => {
+        const detail = event.detail;
+        if (!detail) return;
+        // Host-owned persistence. Ignore if this file is opened without a server.
+        fetch('/consent', {
+          method: 'POST',
+          headers: {'content-type': 'application/json'},
+          body: JSON.stringify(detail),
+        }).catch(() => {});
+      });
+    </script>
+  </body>
+</html>

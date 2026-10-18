@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>tobor-login-flow</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "@noizu/tobor-kit/login-flow.js": "https://cdn.derobot.is/tobor-kit/latest/components/login-flow/login-flow.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <!-- Host injects public OIDC config as a JS property. Never a client secret. -->
+    <tobor-login-flow id="login"></tobor-login-flow>
+    <script type="module">
+      import '@noizu/tobor-kit/login-flow.js';
+
+      const el = document.getElementById('login');
+      // From GET /api/tobor-kit/guide → auth, or host env. Public values only.
+      el.auth = {
+        required: true,
+        provider: 'authentik',
+        issuer: 'https://auth.example/application/o/your-app',
+        client_id: 'public-client-id',
+        scopes: ['openid', 'email', 'profile'],
+        redirect_path: '/auth/oidc/callback',
+      };
+
+      el.addEventListener('tobor-auth-redirect', (event) => {
+        // auto-redirect defaults true. Set auto-redirect=false and navigate here if the host owns redirects.
+        void event.detail.url;
+      });
+
+      el.addEventListener('tobor-auth-token', async (event) => {
+        // Host owns cookies. Do not persist tokens in JS.
+        await fetch('/auth/session', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {'content-type': 'application/json'},
+          body: JSON.stringify({id_token: event.detail.tokens.id_token}),
+        });
+      });
+
+      el.addEventListener('tobor-auth-error', (event) => {
+        document.body.dataset.loginError = event.detail.error;
+      });
+    </script>
+  </body>
+</html>

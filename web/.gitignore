@@ -1,0 +1,14 @@
+node_modules
+dist/
+.stubs/
+*.tsbuildinfo
+*.log
+.DS_Store
+cdn-dist/
+
+# cypress run artifacts
+cypress/videos/
+cypress/screenshots/
+cypress/report/
+*.mp4
+*.mhtml

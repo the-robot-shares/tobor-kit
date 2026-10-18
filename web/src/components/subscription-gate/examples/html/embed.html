@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>noizu-subscription-gate embed</title>
+    <!-- CDN latest rewrites Lit to vendor/ — no import map required. -->
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/subscription-gate/noizu-subscription-gate.js"></script>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Subscription gate</h1>
+    <h2>Entitled (host property)</h2>
+    <noizu-subscription-gate entitled redirect-to="/pricing">
+      <p>Subscriber content</p>
+    </noizu-subscription-gate>
+    <h2>Blocked (host navigates)</h2>
+    <noizu-subscription-gate redirect-to="/pricing">
+      <p>Hidden unless entitled</p>
+    </noizu-subscription-gate>
+    <script type="module">
+      document.querySelectorAll('noizu-subscription-gate').forEach((el) => {
+        el.addEventListener('gate-blocked', (event) => {
+          // Host-owned navigation. auto-redirect defaults to false.
+          console.info('gate-blocked', event.detail.redirectTo);
+        });
+      });
+    </script>
+  </body>
+</html>

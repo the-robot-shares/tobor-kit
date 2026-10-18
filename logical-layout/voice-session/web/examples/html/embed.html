@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tobor-voice-session</title>
+    <!-- CDN artifacts rewrite lit to vendor/; no import map required.
+         npm/local builds need the map below (paths relative to web/). -->
+    <script type="importmap">
+      {
+        "imports": {
+          "lit": "/node_modules/lit/index.js",
+          "lit/": "/node_modules/lit/",
+          "@lit/reactive-element": "/node_modules/@lit/reactive-element/reactive-element.js",
+          "lit-html": "/node_modules/lit-html/lit-html.js",
+          "lit-html/": "/node_modules/lit-html/",
+          "lit-element/": "/node_modules/lit-element/"
+        }
+      }
+    </script>
+    <style>
+      :root {
+        --tobor-kit-accent: #6ee7c7;
+        --tobor-kit-fg: #e8e9f0;
+        --tobor-kit-bg: #12131a;
+      }
+      body {
+        margin: 2rem;
+        font-family: system-ui, sans-serif;
+        background: var(--tobor-kit-bg);
+        color: var(--tobor-kit-fg);
+      }
+    </style>
+  </head>
+  <body>
+    <p>Host page. Session mints via <code>POST /api/tobor-kit/voice/token</code>.</p>
+    <tobor-voice-session id="voice"></tobor-voice-session>
+    <script type="module">
+      import {ToborKitClient} from 'https://cdn.derobot.is/tobor-kit/latest/client.js';
+      import 'https://cdn.derobot.is/tobor-kit/latest/components/voice-session/voice-session.js';
+      // local: import '../../../../client.js'; import '../../voice-session.js';
+
+      const el = document.getElementById('voice');
+      // Host-owned: bearer from the session. Never a provider API key, never an attribute.
+      el.client = new ToborKitClient({
+        baseUrl: '/api/tobor-kit',
+        token: () => sessionStorage.getItem('tobor-access-token'),
+      });
+      el.voice = {adapter: 'native', locale: 'en-US'};
+      el.addEventListener('tobor-voice-state', (e) => console.info('state', e.detail));
+      el.addEventListener('tobor-voice-transcript', (e) => console.info('transcript', e.detail));
+      el.addEventListener('tobor-voice-error', (e) => console.warn('error', e.detail));
+    </script>
+  </body>
+</html>

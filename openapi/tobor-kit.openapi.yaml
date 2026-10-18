@@ -1,0 +1,638 @@
+openapi: 3.1.0
+
+info:
+  title: tobor-kit Guide API
+  version: 1.0.0
+  description: |
+    The contract every tobor-kit backend satisfies. The Elixir implementation is
+    the reference; the Go implementation is a port. Both are exercised by the
+    shared conformance vectors in `openapi/vectors/`.
+
+    Design rules this contract encodes:
+
+    1. The frontend never sees the compiled NPL preamble. It asks for a *config
+       projection* (`GET /guide`) containing only what the UI must render.
+    2. The task/context menu is derived from the live MCP tool inventory
+       (`GET /mcp/tools`), re-dressed by the guide's `mcp.menu` overlay. The
+       server does the dressing so web and Swift cannot drift.
+    3. Telemetry consent is a first-class resource. A turn is never logged with
+       content unless `GET /telemetry/consent` resolves to `on`.
+    4. Voice tokens are minted server-side and are always short-lived. The
+       client never holds a provider API key.
+
+servers:
+  - url: /api/tobor-kit
+    description: Mounted under the host application's own domain.
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: guide
+    description: The UI-facing config projection served to clients.
+  - name: session
+    description: Conversation session lifecycle and turns.
+  - name: mcp
+    description: Live MCP tool inventory, filtered and dressed for the UI.
+  - name: voice
+    description: Short-lived voice session credentials.
+  - name: telemetry
+    description: Telemetry consent state and preference.
+  - name: transcript
+    description: Backend-stored transcript access, when configured.
+
+paths:
+
+  # -------------------------------------------------------------------------
+  /guide:
+    get:
+      tags: [guide]
+      operationId: getGuide
+      summary: UI-facing projection of the guide definition.
+      description: |
+        Everything the client needs to render, and nothing else. Notably absent:
+        the compiled preamble, the agent biography/personality, provider model
+        ids, and any credential. Those stay server-side.
+
+        Defaults: any field omitted from this projection follows the default
+        declared in the guide-definition schema (`schema/tobor.guide-definition.schema.yaml`).
+        Servers SHOULD emit fully-populated projections — both reference
+        backends do — so clients do not have to carry the schema defaults. One
+        projection-time rewrite is normative: a `robot.renderer` of `lottie`
+        or `sprite` without a resolvable `robot.asset` is projected as
+        `glyph`, the dependency-free fallback.
+      security: []
+      responses:
+        "200":
+          description: Guide projection.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/GuideProjection"}
+        "404": {$ref: "#/components/responses/NotFound"}
+
+  # -------------------------------------------------------------------------
+  /sessions:
+    post:
+      tags: [session]
+      operationId: createSession
+      summary: Open a conversation session.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resume_id:
+                  type: string
+                  format: uuid
+                  description: Resume an existing session instead of opening one.
+                locale: {type: string, default: en-US}
+                client:
+                  type: string
+                  enum: [web, ios, macos, other]
+                  default: web
+      responses:
+        "201":
+          description: Session opened.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Session"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+
+  /sessions/{sessionId}:
+    parameters:
+      - $ref: "#/components/parameters/SessionId"
+    get:
+      tags: [session]
+      operationId: getSession
+      summary: Retrieve session state.
+      responses:
+        "200":
+          description: Session state.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Session"}
+        "404": {$ref: "#/components/responses/NotFound"}
+    delete:
+      tags: [session]
+      operationId: endSession
+      summary: Close a session.
+      responses:
+        "204": {description: Session closed.}
+        "404": {$ref: "#/components/responses/NotFound"}
+
+  # -------------------------------------------------------------------------
+  /sessions/{sessionId}/turn:
+    parameters:
+      - $ref: "#/components/parameters/SessionId"
+    post:
+      tags: [session]
+      operationId: createTurn
+      summary: Submit a user turn; stream the assistant turn back.
+      description: |
+        Responds with `text/event-stream`. Frames follow the SSE envelope:
+        the `event:` line carries the event name and the `data:` line is the
+        JSON payload, verbatim, no wrapper object.
+
+        | event        | data                                            |
+        |--------------|-------------------------------------------------|
+        | `state`      | `{"state": "<GuideState>"}`                     |
+        | `delta`      | `{"text": "..."}` — incremental assistant text  |
+        | `tool_call`  | `{"id", "name", "args"?}` — servers MUST always emit `id` and `name`; `args` is present only when the guide's `telemetry.capture.tool_args` is on |
+        | `tool_result`| `{"id", "ok", "summary"?}`                      |
+        | `message`    | terminal assistant `Turn` object                |
+        | `error`      | `{"code", "message"}`                           |
+
+        Canonical order within a turn (when tools run):
+
+            state(thinking) → delta×N → tool_call → state(tool_running)
+              → tool_result → state(speaking) → message
+
+        A stream always terminates with exactly one `message` or one `error`,
+        and ends ON that terminal frame — no trailing `state` after it. The
+        response is HTTP 200 once the stream has started; any failure after
+        the headers are sent is delivered as an `error` frame, not an HTTP
+        error status. Errors before any streaming begins (unknown session,
+        turn already in flight, rate limit) use the normal HTTP status codes
+        below.
+
+        Idempotency-Key semantics: a replay of an already-completed
+        `idempotency_key` returns the original Turn as a single `message`
+        event; a concurrent duplicate of an in-flight turn is `409`.
+
+        Strictness variance is a client concern: clients may drop or tolerate
+        malformed frames as they choose, but a server must emit the superset —
+        `id`/`name` present on every `tool_call`, exactly one terminal frame.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [input]
+              properties:
+                input:
+                  type: string
+                  description: User utterance or typed text.
+                task_id:
+                  type: string
+                  description: |
+                    Set when the turn was initiated from the task menu. Names an
+                    MCP tool the guide should prefer. Advisory, not binding —
+                    the guide may still decline.
+                idempotency_key:
+                  type: string
+                  description: |
+                    Replays return the original turn as a single `message`
+                    event rather than re-running it; a concurrent duplicate
+                    of an in-flight turn is `409`.
+      responses:
+        "200":
+          description: SSE stream.
+          content:
+            text/event-stream:
+              schema: {type: string}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "409":
+          description: A turn is already in flight for this session.
+        "429": {$ref: "#/components/responses/RateLimited"}
+
+  # -------------------------------------------------------------------------
+  /mcp/tools:
+    get:
+      tags: [mcp]
+      operationId: listTools
+      summary: Live MCP tool inventory, filtered and dressed.
+      description: |
+        Live MCP tool inventory, filtered and dressed. This endpoint is
+        session-unscoped: it is a global inventory of the guide's configured
+        MCP servers, identical for every caller and every session.
+
+        The server discovers tools from the configured MCP servers, applies the
+        guide's `mcp.allow` / `mcp.deny` globs, then applies the `mcp.menu`
+        overlay (labels, grouping, order, hidden, confirm). Clients render this
+        verbatim — both the browsable tool list and the task context menu are
+        views over this one response.
+      parameters:
+        - name: refresh
+          in: query
+          schema: {type: boolean, default: false}
+          description: Bypass the server's inventory cache.
+      responses:
+        "200":
+          description: Tool inventory.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [groups, tools]
+                properties:
+                  groups:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, label]
+                      properties:
+                        id: {type: string}
+                        label: {type: string}
+                  tools:
+                    type: array
+                    items: {$ref: "#/components/schemas/Tool"}
+                  degraded:
+                    type: array
+                    description: |
+                      Servers that could not be reached. Present so the UI can
+                      say so rather than silently showing a short list. Each
+                      item always carries a human-readable `label` (the
+                      server's configured label, falling back to its server
+                      id); clients render generic text ("an integration is
+                      unavailable") when a `label` is absent.
+                    items:
+                      type: object
+                      properties:
+                        server: {type: string}
+                        label: {type: string}
+                        error: {type: string}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "502":
+          description: A `required` MCP server was unreachable.
+
+  # -------------------------------------------------------------------------
+  /voice/token:
+    post:
+      tags: [voice]
+      operationId: mintVoiceToken
+      summary: Mint a short-lived voice session credential.
+      description: |
+        Shape depends on `voice.adapter`. For `realtime` this returns an
+        ephemeral provider token the client exchanges directly with the
+        provider. For `backend` it returns endpoint URLs for STT/TTS. For
+        `native` this endpoint returns 409 — no credential is needed.
+      responses:
+        "201":
+          description: Credential minted.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/VoiceCredential"}
+        "409":
+          description: Configured adapter needs no server-minted credential.
+        "503":
+          description: Voice is disabled or the provider is unconfigured.
+
+  # -------------------------------------------------------------------------
+  /telemetry/consent:
+    get:
+      tags: [telemetry]
+      operationId: getTelemetryConsent
+      summary: Resolved telemetry consent for the caller.
+      responses:
+        "200":
+          description: Consent state.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/TelemetryConsent"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+    put:
+      tags: [telemetry]
+      operationId: setTelemetryConsent
+      summary: Record the caller's explicit preference.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: {type: boolean}
+      responses:
+        "200":
+          description: Preference recorded.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/TelemetryConsent"}
+        "403":
+          description: |
+            The preference cannot be recorded: either `telemetry.user_overridable`
+            is false for this guide (the default is binding), or the guide's
+            `telemetry.enabled` master switch is forced off. The client should
+            not have rendered a toggle in either case.
+
+  # -------------------------------------------------------------------------
+  /sessions/{sessionId}/transcript:
+    parameters:
+      - $ref: "#/components/parameters/SessionId"
+    get:
+      tags: [transcript]
+      operationId: getTranscript
+      summary: List stored turns for a session.
+      description: |
+        Only meaningful when `transcript.store` is `backend`. The other stores
+        are client-side; this returns 501 for them so a misconfigured client
+        fails loudly instead of silently showing an empty transcript.
+      parameters:
+        - name: limit
+          in: query
+          schema: {type: integer, default: 200, maximum: 1000}
+        - name: before
+          in: query
+          schema: {type: string, format: date-time}
+      responses:
+        "200":
+          description: Turns, oldest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  turns:
+                    type: array
+                    items: {$ref: "#/components/schemas/Turn"}
+                  has_more: {type: boolean}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "501":
+          description: This guide does not use the backend transcript store.
+    delete:
+      tags: [transcript]
+      operationId: deleteTranscript
+      summary: Erase the stored transcript for this session.
+      responses:
+        "204": {description: Erased.}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "501":
+          description: This guide does not use the backend transcript store.
+
+# ===========================================================================
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Access token from the guide's OIDC flow. Login is entirely
+        client-initiated: this API defines no server `/auth` routes. The
+        client performs the OIDC authorization-code flow with PKCE against
+        the issuer advertised in `GET /guide` (`auth.issuer` +
+        `auth.client_id`) and sends the resulting access token here. Servers
+        treat bearer tokens as opaque credentials and never introspect or
+        refresh them. When `auth.required` is false the session endpoints
+        also accept unauthenticated callers and bind the session to an
+        opaque client id instead of a user.
+
+  parameters:
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid credentials.
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+    NotFound:
+      description: No such resource.
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+    RateLimited:
+      description: Too many requests.
+      headers:
+        Retry-After:
+          schema: {type: integer}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+
+  schemas:
+
+    GuideState:
+      type: string
+      description: Canonical guide states. Drive the avatar from these and nothing else.
+      enum: [idle, listening, thinking, speaking, tool_running, error, offline]
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: {type: string}
+        message: {type: string}
+        detail: {type: object, additionalProperties: true}
+
+    GuideProjection:
+      type: object
+      required: [slug, name, ui, modes, auth, telemetry, voice, transcript]
+      properties:
+        slug: {type: string}
+        name: {type: string}
+        title: {type: string}
+        greeting: {type: string}
+        bundle_hash:
+          type: string
+          description: |
+            Content hash of the compiled prompt bundle in use. Clients echo it
+            in bug reports; it is how a stale deploy is identified.
+
+            Recipe: `sha256:` followed by the lowercase hex SHA-256 over the
+            bundle body serialized as compact JSON — no whitespace between
+            members, object keys sorted lexicographically — computed over the
+            bundle object with the `bundle_hash` field itself excluded. Note
+            the bundle file on disk is pretty-printed; the hash always covers
+            the compact form, never the file bytes.
+        capabilities:
+          type: array
+          description: The "what can you help with" affordance.
+          items:
+            type: object
+            properties:
+              id: {type: string}
+              description: {type: string}
+        modes:
+          type: array
+          items: {type: string, enum: [voice, text, transcript]}
+        default_mode: {type: string, enum: [voice, text, transcript]}
+        ui:
+          type: object
+          properties:
+            robot:
+              type: object
+              properties:
+                renderer: {type: string, enum: [lottie, sprite, glyph]}
+                asset: {type: string}
+                states:
+                  type: object
+                  additionalProperties:
+                    type: object
+                    properties:
+                      segment: {type: string}
+                      loop: {type: boolean}
+                      speed: {type: number}
+                reduced_motion: {type: string, enum: [respect, force_static, ignore]}
+            panel:
+              type: object
+              properties:
+                placement: {type: string, enum: [floating, docked, inline]}
+                start_expanded: {type: boolean}
+                show_tool_list: {type: boolean}
+                show_task_menu: {type: boolean}
+            theme:
+              type: object
+              additionalProperties: {type: string}
+        auth:
+          type: object
+          properties:
+            required: {type: boolean}
+            provider: {type: string, enum: [oidc, authentik, none]}
+            issuer: {type: string}
+            client_id: {type: string}
+            scopes: {type: array, items: {type: string}}
+            redirect_path: {type: string}
+        telemetry:
+          type: object
+          description: Enough for the toggle to render correctly before any API call.
+          properties:
+            enabled: {type: boolean}
+            default: {type: string, enum: [on, off]}
+            user_overridable: {type: boolean}
+        voice:
+          type: object
+          properties:
+            adapter: {type: string, enum: [realtime, native, backend, none]}
+            push_to_talk: {type: boolean}
+            mint_path: {type: string}
+            locale: {type: string}
+        transcript:
+          type: object
+          properties:
+            store: {type: string, enum: [memory, local, backend]}
+            retain_turns: {type: integer}
+
+    Session:
+      type: object
+      required: [id, created_at, state]
+      properties:
+        id: {type: string, format: uuid}
+        created_at: {type: string, format: date-time}
+        state: {$ref: "#/components/schemas/GuideState"}
+        turn_count: {type: integer}
+        user:
+          type: [object, "null"]
+          properties:
+            id: {type: string}
+            email: {type: string}
+            display_name: {type: string}
+
+    Turn:
+      type: object
+      required: [id, role, content, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        role: {type: string, enum: [user, assistant, system]}
+        content: {type: string}
+        created_at: {type: string, format: date-time}
+        tool_calls:
+          type: array
+          items:
+            type: object
+            properties:
+              id: {type: string}
+              name: {type: string}
+              ok: {type: boolean}
+              summary: {type: string}
+        usage:
+          type: object
+          properties:
+            input_tokens: {type: integer}
+            output_tokens: {type: integer}
+
+    Tool:
+      type: object
+      required: [name, label, group]
+      properties:
+        name:
+          type: string
+          description: Fully-qualified MCP tool name, e.g. "Github.PullCreate".
+        label: {type: string, description: Display label after overlay.}
+        description: {type: string}
+        group: {type: string}
+        icon: {type: string}
+        server: {type: string}
+        confirm:
+          type: boolean
+          description: Client must obtain explicit confirmation before invoking.
+        read_only:
+          type: boolean
+          description: From the tool's own read_only_hint annotation, when present.
+        input_schema:
+          type: object
+          additionalProperties: true
+          description: JSON Schema for arguments. Present in the tool list, omitted from the menu view.
+
+    VoiceCredential:
+      type: object
+      required: [adapter, expires_at]
+      properties:
+        adapter: {type: string, enum: [realtime, backend]}
+        expires_at:
+          type: string
+          format: date-time
+          description: |
+            Exact expiry — clients compare it directly against their clock
+            with no clock-skew padding. Servers mint with roughly a
+            five-minute lead so the credential outlives a normal connect.
+        realtime:
+          type: object
+          properties:
+            token: {type: string, description: Ephemeral provider token. Never a long-lived key.}
+            url: {type: string}
+            model: {type: string}
+            voice: {type: string}
+        backend:
+          type: object
+          properties:
+            stt_url: {type: string}
+            tts_url: {type: string}
+
+    TelemetryConsent:
+      type: object
+      required: [enabled, source, user_overridable]
+      properties:
+        enabled:
+          type: boolean
+          description: The RESOLVED value actually governing content capture.
+        source:
+          type: string
+          enum: [user, default, forced]
+          description: |
+            `user` = explicit preference on record.
+            `default` = never expressed; guide default applied.
+            `forced` = no user choice exists: either the guide-level
+            `telemetry.enabled: false` hard master switch (always off, consent
+            cannot be turned on), or `user_overridable` is false and the guide
+            default is binding.
+        user_overridable:
+          type: boolean
+          description: |
+            False whenever `source` is `forced`. Clients hide the consent
+            toggle if EITHER this is false OR `source` is `forced` — the two
+            signals agree, but either alone is sufficient.
+        capture:
+          type: object
+          description: Which fields are captured when enabled is true.
+          properties:
+            prompt: {type: boolean}
+            response: {type: boolean}
+            tool_args:
+              type: boolean
+              description: |
+                Gates OTel capture of tool arguments (which additionally
+                requires resolved consent to be on). The SSE `tool_call`
+                frame is unaffected by consent: its `args` presence follows
+                this flag alone.
+            tool_results: {type: boolean}

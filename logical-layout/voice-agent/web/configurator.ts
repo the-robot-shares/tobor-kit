@@ -1,0 +1,78 @@
+import type {ConfiguratorSchema} from '../../configurator-schema.js';
+
+export const configurator: ConfiguratorSchema = {
+  tag: 'tobor-voice-agent',
+  group: 'agent',
+  importPath: 'components/voice-agent/voice-agent.js',
+  demoHtml:
+    '<tobor-voice-agent organization="acme" project="app" backend-url="http://127.0.0.1:8081" backend="litellm" engine="tts" model="gpt-4o-mini" label="Voice agent"></tobor-voice-agent>',
+  backend: 'voice',
+  fields: [
+    {attr: 'organization', type: 'string', required: true, default: '', group: 'session', description: 'Host organization. JS alias: org.'},
+    {attr: 'project', type: 'string', required: true, default: '', group: 'session'},
+    {attr: 'backend-url', type: 'url', required: true, default: '', group: 'session', description: 'Authenticated voice gateway origin. Not a provider URL.'},
+    {attr: 'backend', type: 'string', default: 'litellm', group: 'session', description: 'Logical provider name allowed by server policy.'},
+    {
+      attr: 'engine',
+      type: 'select',
+      options: ['openai-realtime', 'elevenlabs', 'tts'],
+      default: 'openai-realtime',
+      group: 'session',
+      description: 'JS alias: voiceMode.',
+    },
+    {attr: 'model', type: 'string', default: 'gpt-realtime-mini', group: 'session'},
+    {attr: 'voice', type: 'string', default: '', group: 'session', placeholder: 'Provider default'},
+    {attr: 'tts-model', type: 'string', default: '', group: 'session', placeholder: 'Optional speech model'},
+    {attr: 'system-prompt', type: 'text', default: 'You are a helpful voice assistant.', group: 'session'},
+    {attr: 'avatar-group', type: 'string', default: '', group: 'ui', placeholder: 'orbit | pip | nova'},
+    {attr: 'label', type: 'string', default: 'Voice agent', group: 'ui'},
+    {attr: 'tools', type: 'json', propertyOnly: true, default: [], group: 'session', description: 'Requested tool names. Server policy is authoritative.'},
+    {attr: 'mcpTools', type: 'json', propertyOnly: true, default: [], group: 'session'},
+    {attr: 'avatarGroups', type: 'json', propertyOnly: true, group: 'ui', description: 'Array of {id,label,default,states}.'},
+    {attr: 'avatar', type: 'json', propertyOnly: true, group: 'ui', description: 'Overrides avatar-group selection.'},
+    {
+      attr: 'contextActions',
+      type: 'json',
+      propertyOnly: true,
+      default: [
+        'configure-model',
+        'configure-prompt',
+        'configure-tools',
+        'configure-avatar',
+        'copy-transcript',
+        'clear-transcript',
+        'disconnect',
+      ],
+      group: 'ui',
+    },
+  ],
+  slots: ['footer'],
+  events: [
+    {name: 'tobor-agent-ready', detail: '{sessionId}', description: 'Backend sent ready / session.ready.'},
+    {name: 'tobor-agent-transcript', detail: '{entry, transcript}', description: 'Transcript row upserted.'},
+    {name: 'tobor-agent-state', detail: '{state}', description: 'Canonical avatar/agent state changed.'},
+    {name: 'tobor-agent-error', detail: '{message}', description: 'Transport, media, or backend error.'},
+    {name: 'tobor-agent-event', detail: 'AgentServerEvent', description: 'Accepted backend frame after ready.'},
+  ],
+  cssVariables: [
+    {name: '--tobor-agent-color', default: '#e8edf7'},
+    {name: '--tobor-agent-border', default: '#34425a'},
+    {name: '--tobor-agent-background', default: '#101827'},
+    {name: '--tobor-kit-robot-size', default: '96px'},
+    {name: '--tobor-kit-robot-accent'},
+    {name: '--tobor-kit-robot-shell'},
+    {name: '--tobor-kit-robot-edge'},
+    {name: '--tobor-kit-robot-visor', default: '#0d0f16'},
+  ],
+  methods: [
+    {name: 'connect', args: '', description: 'POST /voice/sessions then open websocketUrl.'},
+    {name: 'disconnect', args: '', description: 'Close socket, realtime, mic, and audio.'},
+    {name: 'sendText', args: 'text?: string', description: 'Send input.text (or realtime text) from text or the composer.'},
+    {name: 'sendImage', args: 'dataUrl: string, kind?: "image" | "screenshot", text?: string', description: 'Send input.image or input.screenshot.'},
+    {name: 'toggleVoice', args: '', description: 'Start/stop microphone (realtime stream or TTS push-to-talk).'},
+    {name: 'captureScreenshot', args: '', description: 'getDisplayMedia still → sendImage(..., "screenshot").'},
+    {name: 'interrupt', args: '', description: 'Stop local audio and send interrupt {turnId}.'},
+  ],
+};
+
+export const configurators: ConfiguratorSchema[] = [configurator];

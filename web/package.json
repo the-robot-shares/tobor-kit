@@ -1,0 +1,338 @@
+{
+  "name": "@noizu/tobor-kit",
+  "version": "0.2.0",
+  "description": "Lit 3 element kit for the tobor-kit Guide API — robot guide panel, voice, transcript, MCP task menu — plus portfolio islands (waitlist, cookie consent, FAQ).",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "./dist/index.js",
+    "./dist/components/*/*.js",
+    "./dist/chunks/*.js"
+  ],
+  "files": [
+    "dist",
+    "registry.yaml",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./guide-panel.js": {
+      "types": "./dist/components/guide-panel/guide-panel.d.ts",
+      "default": "./dist/components/guide-panel/guide-panel.js"
+    },
+    "./robot-avatar.js": {
+      "types": "./dist/components/robot-avatar/robot-avatar.d.ts",
+      "default": "./dist/components/robot-avatar/robot-avatar.js"
+    },
+    "./mode-toggle.js": {
+      "types": "./dist/components/mode-toggle/mode-toggle.d.ts",
+      "default": "./dist/components/mode-toggle/mode-toggle.js"
+    },
+    "./footer-brand.js": {
+      "types": "./dist/components/footer-brand/noizu-footer-brand.d.ts",
+      "default": "./dist/components/footer-brand/noizu-footer-brand.js"
+    },
+    "./voice-session.js": {
+      "types": "./dist/components/voice-session/voice-session.d.ts",
+      "default": "./dist/components/voice-session/voice-session.js"
+    },
+    "./transcript-view.js": {
+      "types": "./dist/components/transcript-view/transcript-view.d.ts",
+      "default": "./dist/components/transcript-view/transcript-view.js"
+    },
+    "./task-menu.js": {
+      "types": "./dist/components/task-menu/task-menu.d.ts",
+      "default": "./dist/components/task-menu/task-menu.js"
+    },
+    "./tool-list.js": {
+      "types": "./dist/components/tool-list/tool-list.d.ts",
+      "default": "./dist/components/tool-list/tool-list.js"
+    },
+    "./login-flow.js": {
+      "types": "./dist/components/login-flow/login-flow.d.ts",
+      "default": "./dist/components/login-flow/login-flow.js"
+    },
+    "./telemetry-toggle.js": {
+      "types": "./dist/components/telemetry-toggle/telemetry-toggle.d.ts",
+      "default": "./dist/components/telemetry-toggle/telemetry-toggle.js"
+    },
+    "./react.js": {
+      "types": "./dist/react.d.ts",
+      "default": "./dist/react.js"
+    },
+    "./client.js": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./voice.js": {
+      "types": "./dist/components/voice-session/index.d.ts",
+      "default": "./dist/components/voice-session/index.js"
+    },
+    "./transcript-store.js": {
+      "types": "./dist/components/transcript-view/transcript-store.d.ts",
+      "default": "./dist/components/transcript-view/transcript-store.js"
+    },
+    "./waitlist": {
+      "types": "./dist/components/waitlist/noizu-waitlist.d.ts",
+      "default": "./dist/components/waitlist/noizu-waitlist.js"
+    },
+    "./cookie": {
+      "types": "./dist/components/cookie/noizu-cookie-consent.d.ts",
+      "default": "./dist/components/cookie/noizu-cookie-consent.js"
+    },
+    "./cookie-settings": {
+      "types": "./dist/components/cookie/noizu-cookie-settings.d.ts",
+      "default": "./dist/components/cookie/noizu-cookie-settings.js"
+    },
+    "./faq": {
+      "types": "./dist/components/faq/noizu-faq.d.ts",
+      "default": "./dist/components/faq/noizu-faq.js"
+    },
+    "./package.json": "./package.json",
+    "./auth.js": {
+      "types": "./dist/components/auth/noizu-auth.d.ts",
+      "default": "./dist/components/auth/noizu-auth.js"
+    },
+    "./voice-agent.js": {
+      "types": "./dist/components/voice-agent/voice-agent.d.ts",
+      "default": "./dist/components/voice-agent/voice-agent.js"
+    },
+    "./billing-status": {
+      "types": "./dist/components/billing-status/noizu-billing-status.d.ts",
+      "default": "./dist/components/billing-status/noizu-billing-status.js"
+    },
+    "./plan-compare": {
+      "types": "./dist/components/plan-compare/noizu-plan-compare.d.ts",
+      "default": "./dist/components/plan-compare/noizu-plan-compare.js"
+    },
+    "./phone-input": {
+      "types": "./dist/components/phone-input/noizu-phone-input.d.ts",
+      "default": "./dist/components/phone-input/noizu-phone-input.js"
+    },
+    "./human-verify": {
+      "types": "./dist/components/human-verify/noizu-human-verify.d.ts",
+      "default": "./dist/components/human-verify/noizu-human-verify.js"
+    },
+    "./subscription-gate": {
+      "types": "./dist/components/subscription-gate/noizu-subscription-gate.d.ts",
+      "default": "./dist/components/subscription-gate/noizu-subscription-gate.js"
+    },
+    "./invite-gate": {
+      "types": "./dist/components/invite-gate/noizu-invite-gate.d.ts",
+      "default": "./dist/components/invite-gate/noizu-invite-gate.js"
+    },
+    "./invite-required": {
+      "types": "./dist/components/invite-gate/invite-required.d.ts",
+      "default": "./dist/components/invite-gate/invite-required.js"
+    },
+    "./model-config": {
+      "types": "./dist/components/model-config/noizu-model-config.d.ts",
+      "default": "./dist/components/model-config/noizu-model-config.js"
+    },
+    "./llm-inference.js": {
+      "types": "./dist/components/llm-inference/llm-inference.d.ts",
+      "default": "./dist/components/llm-inference/llm-inference.js"
+    },
+    "./llm-inference/catalog.js": {
+      "types": "./dist/components/llm-inference/catalog.d.ts",
+      "default": "./dist/components/llm-inference/catalog.js"
+    },
+    "./configurator.js": {
+      "types": "./dist/components/configurator/tobor-configurator.d.ts",
+      "default": "./dist/components/configurator/tobor-configurator.js"
+    },
+    "./chat-thread.js": {
+      "types": "./dist/components/chat-thread/chat-thread.d.ts",
+      "default": "./dist/components/chat-thread/chat-thread.js"
+    },
+    "./page-comments.js": {
+      "types": "./dist/components/page-comments/page-comments.d.ts",
+      "default": "./dist/components/page-comments/page-comments.js"
+    },
+    "./party-card.js": {
+      "types": "./dist/components/party-card/party-card.d.ts",
+      "default": "./dist/components/party-card/party-card.js"
+    },
+    "./agent-card.js": {
+      "types": "./dist/components/party-card/agent-card.d.ts",
+      "default": "./dist/components/party-card/agent-card.js"
+    },
+    "./user-card.js": {
+      "types": "./dist/components/party-card/user-card.d.ts",
+      "default": "./dist/components/party-card/user-card.js"
+    },
+    "./sg-btn": {
+      "types": "./dist/components/styleguide/noizu-sg-btn.d.ts",
+      "default": "./dist/components/styleguide/noizu-sg-btn.js"
+    },
+    "./sg-card": {
+      "types": "./dist/components/styleguide/noizu-sg-card.d.ts",
+      "default": "./dist/components/styleguide/noizu-sg-card.js"
+    },
+    "./sg-card-grid": {
+      "types": "./dist/components/styleguide/noizu-sg-card-grid.d.ts",
+      "default": "./dist/components/styleguide/noizu-sg-card-grid.js"
+    },
+    "./sg-status": {
+      "types": "./dist/components/styleguide/noizu-sg-status.d.ts",
+      "default": "./dist/components/styleguide/noizu-sg-status.js"
+    },
+    "./sg-input": {
+      "types": "./dist/components/styleguide/noizu-sg-input.d.ts",
+      "default": "./dist/components/styleguide/noizu-sg-input.js"
+    },
+    "./sg-spec-table": {
+      "types": "./dist/components/styleguide/noizu-sg-spec-table.d.ts",
+      "default": "./dist/components/styleguide/noizu-sg-spec-table.js"
+    },
+    "./sg-steps": {
+      "types": "./dist/components/styleguide/noizu-sg-steps.d.ts",
+      "default": "./dist/components/styleguide/noizu-sg-steps.js"
+    },
+    "./asset-view.js": {
+      "types": "./dist/components/asset/asset-view.d.ts",
+      "default": "./dist/components/asset/asset-view.js"
+    },
+    "./asset-editor.js": {
+      "types": "./dist/components/asset/asset-editor.d.ts",
+      "default": "./dist/components/asset/asset-editor.js"
+    },
+    "./artifact-view.js": {
+      "types": "./dist/components/artifact/tobor-artifact-view.d.ts",
+      "default": "./dist/components/artifact/tobor-artifact-view.js"
+    },
+    "./artifact-editor.js": {
+      "types": "./dist/components/artifact/tobor-artifact-editor.d.ts",
+      "default": "./dist/components/artifact/tobor-artifact-editor.js"
+    },
+    "./review-panel.js": {
+      "types": "./dist/components/review-panel/review-panel.d.ts",
+      "default": "./dist/components/review-panel/review-panel.js"
+    },
+    "./wiki-space.js": {
+      "types": "./dist/components/wiki/tobor-wiki-space.d.ts",
+      "default": "./dist/components/wiki/tobor-wiki-space.js"
+    },
+    "./wiki-entry.js": {
+      "types": "./dist/components/wiki/tobor-wiki-entry.d.ts",
+      "default": "./dist/components/wiki/tobor-wiki-entry.js"
+    },
+    "./wiki-entry-editor.js": {
+      "types": "./dist/components/wiki/tobor-wiki-entry-editor.d.ts",
+      "default": "./dist/components/wiki/tobor-wiki-entry-editor.js"
+    },
+    "./npl-view.js": {
+      "types": "./dist/components/npl-view/npl-view.d.ts",
+      "default": "./dist/components/npl-view/npl-view.js"
+    },
+    "./mcp-domain.js": {
+      "types": "./dist/components/mcp-domain/tobor-mcp-domain.d.ts",
+      "default": "./dist/components/mcp-domain/tobor-mcp-domain.js"
+    },
+    "./mcp-config.js": {
+      "types": "./dist/components/mcp-config/tobor-mcp-config.d.ts",
+      "default": "./dist/components/mcp-config/tobor-mcp-config.js"
+    },
+    "./mcp-clients.js": {
+      "types": "./dist/components/mcp-clients/tobor-mcp-clients.d.ts",
+      "default": "./dist/components/mcp-clients/tobor-mcp-clients.js"
+    },
+    "./prompt-library.js": {
+      "types": "./dist/components/prompt/tobor-prompt-library.d.ts",
+      "default": "./dist/components/prompt/tobor-prompt-library.js"
+    },
+    "./prompt-history.js": {
+      "types": "./dist/components/prompt/tobor-prompt-history.d.ts",
+      "default": "./dist/components/prompt/tobor-prompt-history.js"
+    },
+    "./persona-card.js": {
+      "types": "./dist/components/persona/persona-card.d.ts",
+      "default": "./dist/components/persona/persona-card.js"
+    },
+    "./persona-picker.js": {
+      "types": "./dist/components/persona/persona-picker.d.ts",
+      "default": "./dist/components/persona/persona-picker.js"
+    },
+    "./sg-select": {
+      "types": "./dist/components/styleguide/noizu-sg-select.d.ts",
+      "default": "./dist/components/styleguide/noizu-sg-select.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build && npm run build:types && npm run build:vendor && node scripts/assert-no-lit.mjs && node scripts/assert-subpath-entries.mjs && node scripts/assert-ssr-import.mjs",
+    "build:vendor": "vite build --config vite.vendor.config.ts",
+    "build:types": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run test:browser && npm run build && npm run test:bundle && npm run test:react",
+    "test:watch": "wtr --config web-test-runner.config.mjs --watch",
+    "stubs": "node scripts/generate-stubs.mjs",
+    "prepublishOnly": "npm run build",
+    "test:browser": "wtr --config web-test-runner.config.mjs",
+    "test:react": "node scripts/smoke-react.mjs",
+    "demo:voice": "node scripts/serve-voice-demo.mjs",
+    "test:e2e": "cypress run",
+    "test:e2e:voice": "cypress run --spec e2e/voice-agent.cy.ts",
+    "isolation:server": "node scripts/serve-isolation.mjs",
+    "isolation:importmap": "node scripts/generate-isolation-importmap.mjs",
+    "isolation:report": "node scripts/generate-isolation-report.mjs",
+    "test:isolation": "cypress run --config-file cypress.isolation.config.ts",
+    "isolation:report:html": "node scripts/generate-isolation-html-report.mjs",
+    "test:bundle": "node scripts/assert-bundle-side-effects.mjs"
+  },
+  "peerDependencies": {
+    "@lit/react": "^1.0.7",
+    "@zumer/snapdom": "^3.0.0",
+    "lit": "^3.0.0",
+    "phoenix": "1.8.15",
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "@lit/react": {
+      "optional": true
+    },
+    "@zumer/snapdom": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@lit/react": "^1.0.8",
+    "@open-wc/testing": "^4.0.0",
+    "@types/mocha": "^10.0.10",
+    "@types/phoenix": "1.6.7",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.2.5",
+    "@web/dev-server-esbuild": "^1.0.4",
+    "@web/test-runner": "^0.20.2",
+    "@zumer/snapdom": "^3.3.4",
+    "cypress": "^15.21.1",
+    "esbuild": "^0.27.7",
+    "lit": "^3.3.3",
+    "phoenix": "1.8.15",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.5"
+  },
+  "publishConfig": {
+    "registry": "https://npm.noizu.com",
+    "access": "public"
+  },
+  "keywords": [
+    "lit",
+    "web-components",
+    "tobor",
+    "mcp",
+    "voice",
+    "guide",
+    "waitlist",
+    "cookie-consent",
+    "faq"
+  ]
+}

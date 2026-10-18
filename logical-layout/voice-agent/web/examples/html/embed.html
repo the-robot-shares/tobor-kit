@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>tobor-voice-agent</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "lit": "https://cdn.derobot.is/tobor-kit/latest/vendor/lit.js",
+        "lit/decorators.js": "https://cdn.derobot.is/tobor-kit/latest/vendor/lit-decorators.js"
+      }
+    }
+  </script>
+  <style>
+    body { margin: 0; font: 16px system-ui; background: #080e19; color: #edf2ff; }
+    main { max-width: 800px; margin: 32px auto; padding: 24px; }
+    tobor-voice-agent { --tobor-agent-color: #edf2ff; }
+  </style>
+</head>
+<body>
+  <main>
+    <!-- Host-owned: authenticate the gateway; do not put provider keys on this tag. -->
+    <tobor-voice-agent
+      organization="acme"
+      project="app"
+      backend-url="http://127.0.0.1:8081"
+      backend="litellm"
+      engine="tts"
+      model="gpt-4o-mini"
+      label="Voice agent"
+    ></tobor-voice-agent>
+  </main>
+  <script type="module">
+    import {createAvatarGroups} from 'https://cdn.derobot.is/tobor-kit/latest/components/voice-agent/voice-agent.js';
+    const agent = document.querySelector('tobor-voice-agent');
+    Object.assign(agent, {
+      tools: [],
+      mcpTools: [],
+      systemPrompt: 'You are a helpful voice assistant.',
+      avatarGroups: createAvatarGroups('https://cdn.derobot.is/tobor-kit/latest/'),
+      avatarGroup: 'orbit',
+      contextActions: ['configure-avatar', 'copy-transcript', 'clear-transcript'],
+    });
+    agent.addEventListener('tobor-agent-error', (event) => console.error(event.detail));
+  </script>
+</body>
+</html>

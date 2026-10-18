@@ -1,0 +1,6 @@
+apiVersion: v2
+name: tobor-kit
+description: Reference backend serving frozen NPL guide bundles over the tobor-kit Guide API.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

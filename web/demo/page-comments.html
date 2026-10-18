@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>page-comments demo (MemoryDataSource + dynamic content)</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 44rem; margin: 2rem auto; padding: 0 1rem; height: 220vh; }
+      section { margin: 3rem 0; }
+    </style>
+  </head>
+  <body>
+    <h1>page-comments demo</h1>
+    <p>Launcher (bottom right) or Alt+C toggles the island. “+ Comment” (or Alt+Shift+C) starts picking — click any element or select text to anchor a thread; Esc cancels. While not picking, host clicks and links behave normally: <a id="pc-demo-link" href="#pc-demo-target">this link still navigates</a>.</p>
+
+    <section>
+      <h2 id="pc-demo-anchor">Seeded anchor heading</h2>
+      <p id="pc-demo-pick" class="pick">
+        Pick target paragraph — Cypress clicks this element to create a thread,
+        then checks the rail card aligns with it after scrolling.
+      </p>
+      <p id="pc-demo-long">
+        Long wrapping paragraph for text-selection tests — this prose runs on
+        long enough to break across several rendered lines at the demo page
+        width, so a selection over its middle always spans more than one line
+        box. Range.getClientRects should report one rectangle per line, the
+        overlay should draw one ring segment per rectangle, and a reload must
+        re-anchor the exact same words rather than the containing element.
+        Text selections are the primary commenting gesture on reading sites,
+        so this paragraph keeps the flow honest about multi-line highlights,
+        quote context, and orphaning after edits.
+      </p>
+    </section>
+
+    <section>
+      <h2 id="pc-demo-target">Link target heading</h2>
+      <p>End of the host-link jump.</p>
+    </section>
+
+    <section>
+      <h2>Dynamic content</h2>
+      <div id="pc-demo-more"></div>
+      <button id="pc-demo-add" type="button">Append a paragraph</button>
+    </section>
+
+    <script type="module">
+      import '../src/components/page-comments/page-comments.ts';
+      import {MemoryDataSource} from '../src/components/page-comments/data-source.ts';
+      import {anchorFromElement, hashText, normalizeText, pageKey} from '../src/components/page-comments/anchor.ts';
+
+      // Seed a thread anchored to #pc-demo-anchor with a real anchor object.
+      const anchorEl = document.querySelector('#pc-demo-anchor');
+      const anchor = anchorFromElement(anchorEl);
+
+      const source = new MemoryDataSource([
+        {
+          id: 'demo-1',
+          page_key: pageKey(location.href),
+          url: location.href,
+          title: document.title,
+          body_md: 'Seeded on the **demo heading**. Delete it and the thread goes orphaned.',
+          resolved: false,
+          author: 'demo',
+          comments: [],
+          anchor,
+        },
+      ]);
+
+      const el = document.createElement('noizu-page-comments');
+      el.site = 'demo-site';
+      el.dataSource = source;
+      document.body.append(el);
+      el.addEventListener('page-comments-thread-create', (e) => console.info('[demo] created', e.detail.id));
+      el.addEventListener('page-comments-thread-orphan', (e) => console.info('[demo] orphaned', e.detail.id));
+
+      let n = 0;
+      document.querySelector('#pc-demo-add').addEventListener('click', () => {
+        n += 1;
+        const p = document.createElement('p');
+        p.textContent = `Appended paragraph ${n} — anchors re-resolve and the rail re-lays-out.`;
+        document.querySelector('#pc-demo-more').append(p);
+      });
+
+      // Expose the hash helper and the live store for the demo console only.
+      window.__pcDemo = {hashText, normalizeText, source};
+    </script>
+  </body>
+</html>

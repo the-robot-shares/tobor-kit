@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>wiki family</title>
+    <!-- CDN latest rewrites Lit to vendor/ — no import map required. -->
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/wiki/tobor-wiki-space.js"></script>
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/wiki/tobor-wiki-entry.js"></script>
+    <script type="module" src="https://cdn.derobot.is/tobor-kit/latest/components/wiki/tobor-wiki-entry-editor.js"></script>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 48rem; margin: 2rem auto; padding: 0 1rem; display: grid; gap: 1rem; }
+    </style>
+  </head>
+  <body>
+    <div class="demo-frame">
+      <tobor-wiki-space></tobor-wiki-space>
+      <tobor-wiki-entry></tobor-wiki-entry>
+      <tobor-wiki-entry-editor hidden></tobor-wiki-entry-editor>
+    </div>
+    <script type="module">
+      const spacesEl = document.querySelector('tobor-wiki-space');
+      const entryEl = document.querySelector('tobor-wiki-entry');
+      const editorEl = document.querySelector('tobor-wiki-entry-editor');
+
+      // Host-owned snapshot. Never a secret on the element.
+      const spaces = [
+        {id: 'eng', title: 'Engineering', slug: 'eng'},
+        {id: 'ops', title: 'Ops'},
+      ];
+      const pages = {
+        eng: {
+          id: 'eng-readme',
+          title: 'README',
+          body: 'Ship the island.\nDo not render HTML.\n<section>stays source</section>',
+          spaceId: 'eng',
+        },
+        ops: {id: 'ops-runbook', title: 'Runbook', body: 'Page the on-call.', spaceId: 'ops'},
+      };
+
+      spacesEl.spaces = spaces;
+      spacesEl.addEventListener('wiki-space-select', (event) => {
+        const page = pages[event.detail.id];
+        entryEl.entry = page ?? null;
+        editorEl.hidden = true;
+      });
+      entryEl.addEventListener('wiki-edit', (event) => {
+        editorEl.entry = entryEl.entry?.id === event.detail.id ? entryEl.entry : null;
+        editorEl.hidden = false;
+      });
+      editorEl.addEventListener('wiki-save', (event) => {
+        const saved = event.detail;
+        // Host-owned persist. Ignore if this file is opened without a server.
+        fetch(`/wiki/entries/${encodeURIComponent(saved.id || 'new')}`, {
+          method: 'PUT',
+          headers: {'content-type': 'application/json'},
+          credentials: 'same-origin',
+          body: JSON.stringify(saved),
+        }).catch(() => {});
+        if (saved.spaceId) pages[saved.spaceId] = saved;
+        entryEl.entry = saved;
+        editorEl.entry = saved;
+        editorEl.hidden = true;
+      });
+    </script>
+  </body>
+</html>

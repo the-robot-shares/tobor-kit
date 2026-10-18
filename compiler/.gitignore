@@ -1,0 +1,8 @@
+/_build/
+/deps/
+/dist/
+/doc/
+/cover/
+erl_crash.dump
+tobor-kit-compile
+*.ez
